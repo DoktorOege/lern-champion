@@ -12,3 +12,8 @@ Nach jeder fertigen Lerneinheit schickt die App eine Zusammenfassung per ntfy.
 
 ## Ablauf für neue Vokabeln
 Fotos → Eintrag in `public/vokabeln.js` → Push auf `main` → Cloudflare veröffentlicht automatisch.
+
+## Updates in der App
+Bei jedem Update `APP_VERSION` in `public/index.html` **und** `version` in `public/version.json` auf denselben neuen Wert setzen
+(optional `note` = Text im Banner, z. B. „Neue Vokabeln: Unit 3“, und `VOC_STAND` anpassen).
+Die App zeigt dann oben „🆕 … jetzt aktualisieren“.

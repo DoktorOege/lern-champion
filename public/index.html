@@ -198,6 +198,10 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
 .vhead{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;font-weight:900;color:var(--muted);margin-bottom:4px}
 .weakdot{color:#c0103f;font-size:13px}
 .listcount{font-size:13px;color:var(--muted);font-weight:800}
+#updbar{display:none;width:100%;border:0;border-radius:20px;padding:14px 16px;margin:0 0 14px;font-family:inherit;font-weight:900;font-size:17px;color:#1c0f45;text-align:left;
+  background:linear-gradient(90deg,#a6ff00,#00e0ff);box-shadow:0 6px 0 rgba(0,0,0,.25);animation:breathe 1.6s ease-in-out infinite}
+#updbar small{display:block;font-size:13px;font-weight:700;opacity:.8}
+#updbar.show{display:block}
 </style>
 </head>
 <body data-subj="math">
@@ -212,6 +216,7 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
 <!-- HOME -->
 <section class="screen active" id="s-home">
   <div class="top"><h1 id="apptitle">1×1 Champion</h1><button class="iconbtn holdring" id="btn-settings" aria-label="Eltern-Bereich">⚙️</button></div>
+  <button id="updbar"><span id="updtxt">🆕 Neue Version da! Jetzt aktualisieren</span><small>Antippen – dauert nur eine Sekunde</small></button>
   <div class="tabs" id="tabs">
     <button class="tab" data-s="math"><span class="ti">🧮</span>1×1</button>
     <button class="tab" data-s="en"><span class="ti">🇬🇧</span>Englisch</button>
@@ -343,6 +348,8 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
       </div>
       <p class="small">Nach jeder fertigen Runde (jedes Fach) kommt die Auswertung als Push. Ist das Handy offline, wird sie später nachgeschickt.</p>
       <p class="small" id="pending"></p>
+      <p class="small" id="verinfo"></p>
+      <button class="btn2" id="btn-update-check">🔄 Nach Updates suchen</button>
       <label for="in-name">Name des Kindes</label>
       <input type="text" id="in-name" placeholder="z. B. Lea">
       <label>Ton</label>
@@ -1024,6 +1031,7 @@ function renderSettings(){
                                       : `<span style="background:#dcfbe9;color:#007a4d">Noch keine Fehler 🎉</span>`;
   $("pending").textContent = S.outbox.length ? `⏳ ${S.outbox.length} Zusammenfassung(en) warten aufs Senden.` : "";
   $("test-status").textContent = "";
+  renderVer();
 }
 $("rowchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; const p = P(), r = +c.dataset.r;
   p.rows = p.rows.includes(r) ? p.rows.filter(x => x !== r) : p.rows.concat(r).sort((a,b) => a-b);
@@ -1043,12 +1051,47 @@ twice("btn-reset", "Nochmal tippen = dieses Fach wirklich zurücksetzen", () => 
   S.subj[S.cur] = Object.assign(subjDefaults(S.cur), keep); save(); renderSettings(); toast("Zurückgesetzt ✅"); });
 $("btn-back").onclick = () => { renderHome(); show("s-home"); };
 
+/* ================= Updates ================= */
+const APP_VERSION = "2026-11-21.3";
+const VOC_STAND = "21.11.2026";
+let remoteVer = null;
+async function checkUpdate(){
+  try {
+    const r = await fetch("version.json?t=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return false;
+    remoteVer = await r.json();
+    const has = remoteVer.version && remoteVer.version !== APP_VERSION;
+    $("updtxt").textContent = has ? (remoteVer.note ? `🆕 ${remoteVer.note} – jetzt aktualisieren` : "🆕 Neue Version da! Jetzt aktualisieren") : "";
+    $("updbar").classList.toggle("show", !!has);
+    return has;
+  } catch (e) { return false; }
+}
+async function doUpdate(){
+  $("updtxt").textContent = "⏳ Wird aktualisiert …";
+  try {
+    if ("caches" in window) for (const k of await caches.keys()) await caches.delete(k);
+    const reg = navigator.serviceWorker && await navigator.serviceWorker.getRegistration();
+    if (reg) await Promise.race([reg.update().catch(() => {}), new Promise(r => setTimeout(r, 2500))]);
+  } catch (e) {}
+  location.reload();
+}
+$("updbar").onclick = doUpdate;
+$("btn-update-check").onclick = async () => {
+  $("verinfo").textContent = "Suche …";
+  const has = await checkUpdate();
+  if (has) doUpdate(); else { renderVer(); toast(remoteVer ? "✅ Alles aktuell" : "Gerade offline"); }
+};
+function renderVer(){ $("verinfo").textContent = `App-Version ${APP_VERSION} · Vokabeln Stand ${VOC_STAND}`; }
+document.addEventListener("visibilitychange", () => { if (!document.hidden) checkUpdate(); });
+addEventListener("online", checkUpdate);
+
 /* ================= Start ================= */
 $("btn-start").onclick = () => { beep([523,784,1047],.07); startRound(); };
 $("btn-again").onclick = () => { S.cur = G ? G.subj : S.cur; startRound(); };
 $("btn-home").onclick = () => { renderHome(); show("s-home"); };
 renderHome();
 flushOutbox();
+checkUpdate();
 if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
 </script>
 </body>
