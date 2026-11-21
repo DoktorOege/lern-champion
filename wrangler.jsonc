@@ -1,0 +1,8 @@
+{
+  // Cloudflare Worker "1x1" – liefert nur die statischen Dateien aus ./public aus
+  "name": "1x1",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./public"
+  }
+}

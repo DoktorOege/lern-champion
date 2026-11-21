@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#1a0b3d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lern-Champion">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Lern-Champion</title>
+<style>
+:root{
+  --ink:#1c0f45; --muted:#7b72a6; --ok:#00d68f; --bad:#ff3d71; --gold:#ffd23f;
+  --pink:#ff2e93; --violet:#8a3ffc; --blue:#2f80ff; --cyan:#00e0ff; --lime:#a6ff00; --orange:#ff8a00;
+  --soft:#f4f0ff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{
+  font-family:ui-rounded,"SF Pro Rounded","Nunito","Arial Rounded MT Bold",system-ui,-apple-system,Roboto,sans-serif;
+  color:var(--ink); overflow:hidden; user-select:none; -webkit-user-select:none;
+  background:#1a0b3d;
+}
+/* animierter Hintergrund */
+#bg{position:fixed;inset:0;z-index:0;overflow:hidden;
+  background:linear-gradient(135deg,#2b0a63,#5a12b8,#c2187a,#ff5e3a,#1f6bff,#2b0a63);background-size:400% 400%;animation:bgmove 18s ease infinite}
+@keyframes bgmove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.blob{position:absolute;border-radius:50%;filter:blur(40px);opacity:.55;animation:float 14s ease-in-out infinite}
+.blob.b1{width:260px;height:260px;background:#00e0ff;top:-60px;left:-80px}
+.blob.b2{width:300px;height:300px;background:#ff2e93;bottom:-90px;right:-90px;animation-delay:-5s}
+.blob.b3{width:200px;height:200px;background:#a6ff00;top:40%;left:60%;opacity:.3;animation-delay:-9s}
+@keyframes float{50%{transform:translate(40px,30px) scale(1.15)}}
+.star{position:absolute;color:#fff;opacity:.7;animation:twinkle 3s ease-in-out infinite}
+@keyframes twinkle{50%{opacity:.1;transform:scale(.6)}}
+#flash{position:fixed;inset:0;z-index:40;pointer-events:none;opacity:0;transition:opacity .35s}
+#app{position:relative;z-index:1;height:100dvh;display:flex;flex-direction:column;max-width:520px;margin:0 auto;
+  padding:env(safe-area-inset-top) 14px calc(env(safe-area-inset-bottom) + 12px)}
+.screen{display:none;flex:1;flex-direction:column;min-height:0}
+.screen.active{display:flex;animation:enter .35s cubic-bezier(.2,1.4,.5,1)}
+@keyframes enter{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:none}}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#fff;padding:12px 2px}
+.top h1{font-size:24px;margin:0;font-weight:900;text-shadow:0 3px 0 rgba(0,0,0,.25)}
+.iconbtn{background:rgba(255,255,255,.18);border:2px solid rgba(255,255,255,.35);color:#fff;font-size:22px;width:46px;height:46px;border-radius:16px;backdrop-filter:blur(6px);font-family:inherit}
+.card{background:rgba(255,255,255,.96);border-radius:26px;padding:16px;box-shadow:0 12px 0 rgba(30,0,80,.25),0 20px 40px rgba(20,0,60,.3);margin-bottom:16px}
+.scroll{overflow-y:auto;flex:1;min-height:0;padding:4px 2px 10px}
+.scroll::-webkit-scrollbar{display:none}
+
+/* Home */
+.hero{display:flex;align-items:center;gap:12px}
+.avatar{width:70px;height:70px;border-radius:24px;font-size:44px;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,var(--gold),var(--orange));box-shadow:0 5px 0 #c25e00;border:0;flex:none;font-family:inherit}
+.avatar:active{transform:scale(.92) rotate(-8deg)}
+.hello{font-size:26px;font-weight:900;margin:0}
+.lvl{display:inline-block;background:linear-gradient(90deg,var(--violet),var(--pink));color:#fff;font-weight:900;border-radius:99px;padding:3px 10px;font-size:13px;margin-top:3px}
+.sub{color:var(--muted);margin:0;font-size:14px}
+.bar{height:14px;background:#ebe5ff;border-radius:99px;overflow:hidden;margin-top:10px}
+.bar>i{display:block;height:100%;width:0;border-radius:99px;transition:width .8s cubic-bezier(.2,1.2,.5,1);
+  background:linear-gradient(90deg,var(--cyan),var(--lime),var(--gold),var(--orange),var(--pink));background-size:200% 100%;animation:shine 3s linear infinite}
+@keyframes shine{to{background-position:200% 0}}
+.row{display:flex;gap:10px;align-items:center}
+.stat{flex:1;border-radius:18px;padding:10px 6px;text-align:center;color:#fff}
+.stat b{display:block;font-size:24px;font-weight:900}
+.stat span{font-size:11px;font-weight:700;opacity:.9}
+.c1{background:linear-gradient(135deg,#ff8a00,#ff2e63)}
+.c2{background:linear-gradient(135deg,#00c2ff,#3a5bff)}
+.c3{background:linear-gradient(135deg,#00d68f,#00a3a3)}
+.big{width:100%;border:0;border-radius:24px;padding:20px;font-size:24px;font-weight:900;color:#fff;font-family:inherit;
+  background:linear-gradient(90deg,#ff8a00,#ff2e93,#8a3ffc);background-size:200% 100%;animation:shine 3s linear infinite;
+  box-shadow:0 9px 0 #8b1060,0 0 30px rgba(255,46,147,.5);margin:4px 0 22px;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.big.pulse{animation:shine 3s linear infinite,breathe 1.6s ease-in-out infinite}
+@keyframes breathe{50%{transform:scale(1.03)}}
+.big:active{transform:translateY(5px)!important;box-shadow:0 4px 0 #8b1060}
+.big.blue{background:linear-gradient(90deg,#2f80ff,#8a3ffc);box-shadow:0 9px 0 #3a1b9c;animation:none}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{border:0;background:var(--soft);border-radius:99px;padding:10px 16px;font-weight:800;font-size:15px;color:var(--ink);font-family:inherit;box-shadow:0 4px 0 #d9d0ff}
+.chip.on{color:#fff;background:linear-gradient(135deg,var(--violet),var(--pink));box-shadow:0 4px 0 #6a1a8c}
+h3{margin:0 0 10px;font-size:17px;font-weight:900}
+.badges{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.badge{text-align:center;font-size:11px;font-weight:700;color:var(--muted);background:var(--soft);border-radius:16px;padding:8px 3px;opacity:.4;filter:grayscale(1)}
+.badge.got{opacity:1;filter:none;color:var(--ink);background:linear-gradient(135deg,#fff6c7,#ffe0f0)}
+.badge div{font-size:28px}
+.boss{display:flex;gap:6px;flex-wrap:wrap}
+.boss span{background:linear-gradient(135deg,#2b0a63,#5a12b8);color:#fff;border-radius:12px;padding:6px 10px;font-weight:800;font-size:15px}
+.goal{display:flex;gap:6px;margin-top:4px}
+.goal i{flex:1;height:10px;border-radius:99px;background:#ebe5ff}
+.goal i.on{background:linear-gradient(90deg,var(--lime),var(--ok))}
+
+/* Spiel */
+.gtop{display:flex;align-items:center;gap:10px;color:#fff;padding:12px 2px 8px}
+.progress{flex:1;height:18px;background:rgba(255,255,255,.2);border-radius:99px;overflow:hidden;border:2px solid rgba(255,255,255,.35)}
+.progress>i{display:block;height:100%;width:0;transition:width .5s cubic-bezier(.2,1.3,.5,1);
+  background:linear-gradient(90deg,var(--cyan),var(--lime),var(--gold),var(--orange),var(--pink));background-size:200% 100%;animation:shine 2s linear infinite}
+.combo{font-weight:900;min-width:66px;text-align:right;font-size:22px;text-shadow:0 0 12px #ff8a00}
+.combo.hot{animation:pulse .5s ease}
+@keyframes pulse{50%{transform:scale(1.5) rotate(-6deg)}}
+.taskcard{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;min-height:0;margin-bottom:12px}
+.taskcard.bounce{animation:bounce .5s cubic-bezier(.2,1.6,.5,1)}
+@keyframes bounce{30%{transform:scale(1.06) rotate(1.5deg)}60%{transform:scale(.98) rotate(-1deg)}}
+.task{font-size:clamp(50px,16vw,78px);font-weight:900;text-align:center;
+  background:linear-gradient(90deg,var(--violet),var(--pink),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.answer{margin-top:10px;min-width:160px;height:80px;border-radius:22px;background:var(--soft);font-size:52px;font-weight:900;
+  display:flex;align-items:center;justify-content:center;border:4px dashed #cbbfff;padding:0 18px;transition:transform .2s}
+.answer.ok{background:linear-gradient(135deg,#b6ffdf,#5cf2b0);border:4px solid var(--ok);color:#00663f;transform:scale(1.12)}
+.answer.bad{background:#ffe3ea;border:4px solid var(--bad);color:#c0103f;animation:shake .4s}
+@keyframes shake{20%,60%{transform:translateX(-10px)}40%,80%{transform:translateX(10px)}}
+#praise{position:fixed;left:0;right:0;top:28%;text-align:center;z-index:45;pointer-events:none;font-size:clamp(44px,13vw,70px);font-weight:900;
+  color:#fff;-webkit-text-stroke:2px rgba(0,0,0,.15);text-shadow:0 5px 0 rgba(0,0,0,.25),0 0 30px rgba(255,255,255,.8);opacity:0;transform:scale(.2) rotate(-12deg)}
+#praise.show{animation:praise 1s cubic-bezier(.2,1.6,.4,1) forwards}
+@keyframes praise{0%{opacity:0;transform:scale(.2) rotate(-12deg)}25%{opacity:1;transform:scale(1.15) rotate(4deg)}45%{transform:scale(1) rotate(-2deg)}80%{opacity:1}100%{opacity:0;transform:scale(1.2) translateY(-40px)}}
+.keypad{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.key{border:0;border-radius:20px;font-size:32px;font-weight:900;color:#fff;height:64px;font-family:inherit;text-shadow:0 2px 0 rgba(0,0,0,.2)}
+.key:active{transform:translateY(4px) scale(.96)}
+.k0{background:#ff2e93;box-shadow:0 6px 0 #a3105a}.k1{background:#8a3ffc;box-shadow:0 6px 0 #5016b0}
+.k2{background:#2f80ff;box-shadow:0 6px 0 #1a4bb0}.k3{background:#00b8d9;box-shadow:0 6px 0 #00768c}
+.k4{background:#ff8a00;box-shadow:0 6px 0 #b35600}
+.key.ok{background:linear-gradient(135deg,#00e09a,#00b377);box-shadow:0 6px 0 #00754d}
+.key.del{background:#fff;color:#c0103f;text-shadow:none;box-shadow:0 6px 0 #e0b3c0}
+
+/* Rechenweg */
+.way{position:absolute;inset:0;background:#fff;border-radius:26px;padding:18px;display:none;flex-direction:column;z-index:5}
+.way.show{display:flex;animation:enter .3s}
+.way h2{margin:0 0 4px;color:var(--violet);font-size:22px;font-weight:900}
+.way .yours{color:var(--muted);margin:0 0 10px;font-size:15px}
+.steps{background:var(--soft);border-radius:18px;padding:12px 14px;font-size:25px;font-weight:900;line-height:1.55;flex:1;overflow:auto}
+.steps>div{opacity:0;animation:stepin .35s forwards}
+@keyframes stepin{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.steps .hint{font-size:15px;font-weight:800;color:#fff;background:linear-gradient(90deg,var(--violet),var(--pink));border-radius:12px;padding:8px 10px;margin-bottom:8px;line-height:1.3}
+.steps .res{color:#00a86b}
+.steps .sm{font-size:15px;color:var(--muted);font-weight:800}
+.way .big{margin:12px 0 4px}
+
+/* Ergebnis */
+.stars{font-size:clamp(34px,11vw,50px);text-align:center;letter-spacing:2px;margin:0;white-space:nowrap}
+.stars span{display:inline-block;opacity:.15;transform:scale(.4);transition:all .5s cubic-bezier(.3,1.8,.5,1);filter:grayscale(1)}
+.stars span.on{opacity:1;transform:scale(1.1);filter:drop-shadow(0 0 12px #ffd23f)}
+.resbig{text-align:center;font-size:48px;font-weight:900;margin:0;background:linear-gradient(90deg,var(--violet),var(--pink));-webkit-background-clip:text;background-clip:text;color:transparent}
+.center{text-align:center}
+.newbadge{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#fff3b0,#ffd6ec);border-radius:16px;padding:10px;margin-top:10px;animation:pop .6s cubic-bezier(.3,1.8,.5,1) both}
+.newbadge div{font-size:34px}
+@keyframes pop{from{transform:scale(.2) rotate(-10deg);opacity:0}to{transform:none;opacity:1}}
+.notify{font-size:13px;color:var(--muted);text-align:center;margin:10px 0 0}
+
+/* Einstellungen */
+label{display:block;font-weight:800;margin:14px 0 6px}
+input[type=text]{width:100%;padding:12px;border-radius:14px;border:3px solid #ddd5ff;font-size:17px;font-family:inherit;font-weight:700;color:var(--ink)}
+.small{font-size:13px;color:var(--muted);line-height:1.45}
+.btn2{border:0;border-radius:14px;padding:12px 14px;font-weight:800;font-size:15px;background:var(--soft);color:var(--violet);font-family:inherit}
+.btn2.red{background:#ffe3ea;color:#c0103f}
+.statlist{display:flex;gap:6px;flex-wrap:wrap}
+.statlist span{background:#ffe3ea;color:#c0103f;border-radius:10px;padding:5px 9px;font-weight:700;font-size:13px}
+#toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(120px);background:#1c0f45;color:#fff;padding:12px 18px;border-radius:16px;font-weight:800;z-index:60;transition:transform .3s;white-space:nowrap}
+#toast.show{transform:translateX(-50%) translateY(0)}
+.holdring{position:relative}
+.holdring::after{content:"";position:absolute;inset:-3px;border-radius:18px;border:3px solid var(--gold);clip-path:inset(100% 0 0 0);transition:none}
+.holdring.holding::after{clip-path:inset(0 0 0 0);transition:clip-path 1.2s linear}
+#megabanner{position:fixed;left:0;right:0;top:40%;z-index:46;text-align:center;pointer-events:none;font-size:clamp(40px,12vw,64px);font-weight:900;color:var(--gold);
+  text-shadow:0 0 20px #ff8a00,0 6px 0 #8b1060;opacity:0}
+#megabanner.show{animation:mega 1.8s ease forwards}
+@keyframes mega{0%{opacity:0;transform:scale(3)}20%{opacity:1;transform:scale(1)}30%{transform:scale(1.1)}80%{opacity:1}100%{opacity:0;transform:scale(.8)}}
+canvas#fx{position:fixed;inset:0;pointer-events:none;z-index:50}
+/* ---- Fächer ---- */
+body[data-subj="en"] #bg{background-image:linear-gradient(135deg,#0b1f5c,#1f5fd1,#c8102e,#ff5470,#1f5fd1,#0b1f5c)}
+body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00,#ffb347,#ae1c28,#ff7b00,#21468b)}
+.tabs{display:flex;gap:8px;margin:0 0 14px}
+.tab{flex:1;border-radius:18px;padding:8px 4px;font-weight:900;font-size:13px;background:rgba(255,255,255,.16);color:#fff;border:2px solid rgba(255,255,255,.3);font-family:inherit}
+.tab .ti{font-size:26px;display:block;line-height:1.2}
+.tab.on{background:#fff;color:var(--ink);border-color:#fff;box-shadow:0 6px 0 rgba(0,0,0,.25);transform:translateY(-2px)}
+.qsub{font-size:15px;font-weight:800;color:var(--muted);margin:0 0 6px;text-align:center}
+.task.voc{font-size:clamp(30px,9vw,46px);line-height:1.15;word-break:break-word}
+.speak{border:0;background:var(--soft);border-radius:14px;font-size:22px;padding:6px 14px;margin-top:8px;font-family:inherit;font-weight:800;color:var(--violet)}
+.vocbox{width:100%;margin-top:14px;display:none;flex-direction:column;gap:10px}
+.vocin{width:100%;font-size:30px;font-weight:900;text-align:center;padding:14px 10px;border-radius:20px;border:4px dashed #cbbfff;background:var(--soft);color:var(--ink);font-family:inherit;outline:none}
+.vocin:focus{border-color:var(--violet);border-style:solid}
+.vocin.ok{background:linear-gradient(135deg,#b6ffdf,#5cf2b0);border:4px solid var(--ok);color:#00663f}
+.vocin.bad{background:#ffe3ea;border:4px solid var(--bad);color:#c0103f;animation:shake .4s}
+.vbtns{display:flex;gap:10px}
+.vbtns .big{margin:0;padding:16px;font-size:20px}
+.vbtns .hintb{flex:0 0 32%;background:linear-gradient(90deg,#ffd23f,#ff8a00);box-shadow:0 7px 0 #b35600;animation:none}
+.way.good h2{color:#00a86b}
+.word{font-size:34px;font-weight:900;line-height:1.3;word-break:break-word}
+.word .x{background:#ffd0db;color:#c0103f;border-radius:6px;padding:0 2px}
+.typed{font-size:22px;font-weight:800;color:var(--muted);margin-top:6px}
+.typed .m{color:#c0103f;text-decoration:line-through}
+.arrow{font-size:16px;color:var(--muted);font-weight:800}
+.lessons .chip{font-size:14px;padding:8px 12px}
+.listbtn{width:100%;margin-top:14px;border:0;border-radius:18px;padding:14px;font-size:18px;font-weight:900;font-family:inherit;color:var(--violet);background:var(--soft);box-shadow:0 5px 0 #d9d0ff}
+.listbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #d9d0ff}
+.vrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;padding:10px 0;border-top:2px solid #f0ebff}
+.vrow:first-of-type{border-top:0}
+.vrow .fx{font-weight:900;font-size:17px;display:flex;align-items:center;gap:6px;word-break:break-word}
+.vrow .dx{font-weight:700;font-size:16px;color:#3b3170;word-break:break-word}
+.vrow .say{border:0;background:var(--soft);border-radius:10px;font-size:15px;padding:4px 7px;flex:none}
+.vrow .cov{filter:blur(7px);opacity:.6;cursor:pointer}
+.vhead{display:grid;grid-template-columns:1fr 1fr;gap:10px;font-size:13px;font-weight:900;color:var(--muted);margin-bottom:4px}
+.weakdot{color:#c0103f;font-size:13px}
+.listcount{font-size:13px;color:var(--muted);font-weight:800}
+</style>
+</head>
+<body data-subj="math">
+<div id="bg"><div class="blob b1"></div><div class="blob b2"></div><div class="blob b3"></div></div>
+<div id="flash"></div>
+<canvas id="fx"></canvas>
+<div id="praise"></div>
+<div id="megabanner"></div>
+<div id="toast"></div>
+<div id="app">
+
+<!-- HOME -->
+<section class="screen active" id="s-home">
+  <div class="top"><h1 id="apptitle">1×1 Champion</h1><button class="iconbtn holdring" id="btn-settings" aria-label="Eltern-Bereich">⚙️</button></div>
+  <div class="tabs" id="tabs">
+    <button class="tab" data-s="math"><span class="ti">🧮</span>1×1</button>
+    <button class="tab" data-s="en"><span class="ti">🇬🇧</span>Englisch</button>
+    <button class="tab" data-s="nl"><span class="ti">🇳🇱</span>Niederl.</button>
+  </div>
+  <div class="scroll">
+    <div class="card">
+      <div class="hero">
+        <button class="avatar" id="avatar" aria-label="Avatar wechseln">🦊</button>
+        <div style="flex:1">
+          <p class="hello" id="hello">Hey!</p>
+          <span class="lvl" id="lvl">Level 1</span>
+        </div>
+      </div>
+      <div class="bar"><i id="xpbar"></i></div>
+      <p class="sub" id="xptxt" style="margin-top:6px"></p>
+      <div class="row" style="margin-top:12px">
+        <div class="stat c1"><b id="st-streak">0🔥</b><span>Tage in Folge</span></div>
+        <div class="stat c2"><b id="st-total">0</b><span>richtig gesamt</span></div>
+        <div class="stat c3"><b id="st-goal">0/2</b><span>Tagesziel</span></div>
+      </div>
+      <div class="goal" id="goalbar"></div>
+    </div>
+    <button class="big pulse" id="btn-start">LOS GEHT'S! 🚀</button>
+    <div class="card" id="mathcard">
+      <h3>Was willst du zocken?</h3>
+      <div class="chips" id="modechips">
+        <button class="chip" data-mode="mul">✖️ Mal</button>
+        <button class="chip" data-mode="div">➗ Geteilt</button>
+        <button class="chip" data-mode="mix">🎲 Gemischt</button>
+      </div>
+    </div>
+    <div class="card" id="voccard">
+      <h3>Welche Lektionen?</h3>
+      <div class="chips lessons" id="lessonchips"></div>
+      <h3 style="margin-top:14px">Richtung</h3>
+      <div class="chips" id="dirchips"></div>
+      <button class="listbtn" id="btn-list">📖 Vokabelliste ansehen</button>
+    </div>
+    <div class="card" id="bosscard" style="display:none">
+      <h3 id="bosstitle">👾 Boss-Aufgaben – besieg sie!</h3>
+      <div class="boss" id="bosslist"></div>
+    </div>
+    <div class="card">
+      <h3>🏅 Abzeichen</h3>
+      <div class="badges" id="badges"></div>
+    </div>
+  </div>
+</section>
+
+<!-- SPIEL -->
+<section class="screen" id="s-game">
+  <div class="gtop">
+    <button class="iconbtn" id="btn-quit" aria-label="Abbrechen">✕</button>
+    <div class="progress"><i id="prog"></i></div>
+    <div class="combo" id="combo"></div>
+  </div>
+  <div class="card taskcard" id="taskcard">
+    <p class="qsub" id="qsub"></p>
+    <div class="task" id="task">7 · 8 =</div>
+    <button class="speak" id="qspeak" style="display:none">🔊 Anhören</button>
+    <div class="answer" id="answer">&nbsp;</div>
+    <div class="vocbox" id="vocbox">
+      <input class="vocin" id="vocin" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="done" placeholder="Hier schreiben …">
+      <div class="vbtns">
+        <button class="big hintb" id="btn-hint">💡 Tipp</button>
+        <button class="big" id="btn-check">Prüfen ✓</button>
+      </div>
+    </div>
+    <div class="way" id="way">
+      <h2 id="wayh">So geht's 🧠</h2>
+      <p class="yours" id="yours"></p>
+      <div class="steps" id="steps"></div>
+      <button class="big blue" id="btn-next">Weiter ➜</button>
+    </div>
+  </div>
+  <div class="keypad" id="keypad"></div>
+</section>
+
+<!-- ERGEBNIS -->
+<section class="screen" id="s-result">
+  <div class="top"><h1 id="res-title">Geschafft!</h1><span></span></div>
+  <div class="scroll">
+    <div class="card">
+      <div class="stars" id="stars"><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span><span>⭐</span></div>
+      <p class="resbig" id="res-score">9 / 10</p>
+      <p class="sub center" id="res-sub"></p>
+      <div class="row" style="margin-top:12px">
+        <div class="stat c1"><b id="res-time">0:00</b><span>Zeit</span></div>
+        <div class="stat c2"><b id="res-avg">0 s</b><span>pro Aufgabe</span></div>
+        <div class="stat c3"><b id="res-xp">+0</b><span>XP</span></div>
+      </div>
+      <div id="res-extra"></div>
+      <p class="notify" id="res-notify"></p>
+    </div>
+    <div class="card" id="res-errcard" style="display:none">
+      <h3 id="res-errtitle">👾 Neue Boss-Aufgaben:</h3>
+      <div class="boss" id="res-errors"></div>
+    </div>
+    <button class="big pulse" id="btn-again">NOCH EINE RUNDE! 🔁</button>
+    <button class="big blue" id="btn-home">Fertig für heute 🏠</button>
+  </div>
+</section>
+
+<!-- VOKABELLISTE -->
+<section class="screen" id="s-list">
+  <div class="top"><h1 id="list-title">📖 Vokabeln</h1><button class="iconbtn" id="btn-list-back" aria-label="Zurück">✕</button></div>
+  <div class="card" style="margin-bottom:12px">
+    <h3 style="margin-bottom:8px">Selbst abfragen: eine Seite verdecken</h3>
+    <div class="chips" id="coverchips"></div>
+    <p class="small" style="margin:8px 0 0">Verdeckte Wörter antippen zum Aufdecken. 👾 = da gab es schon Fehler.</p>
+  </div>
+  <div class="scroll" id="vlist"></div>
+</section>
+
+<!-- EINSTELLUNGEN -->
+<section class="screen" id="s-settings">
+  <div class="top"><h1>⚙️ Eltern-Bereich</h1><button class="iconbtn" id="btn-back">✓</button></div>
+  <div class="scroll">
+    <div class="card">
+      <h3>📲 Zusammenfassung aufs Eltern-Handy</h3>
+      <p class="small">1. App <b>ntfy</b> installieren (Play Store / App Store, kostenlos).<br>
+      2. In ntfy auf <b>+</b> tippen und genau dieses Thema eintragen:</p>
+      <input type="text" id="in-topic" spellcheck="false" autocapitalize="off" autocomplete="off">
+      <div class="row" style="margin-top:8px;flex-wrap:wrap">
+        <button class="btn2" id="btn-copy">Kopieren</button>
+        <button class="btn2" id="btn-test">Test senden</button>
+        <span class="small" id="test-status"></span>
+      </div>
+      <p class="small">Nach jeder fertigen Runde (jedes Fach) kommt die Auswertung als Push. Ist das Handy offline, wird sie später nachgeschickt.</p>
+      <p class="small" id="pending"></p>
+      <label for="in-name">Name des Kindes</label>
+      <input type="text" id="in-name" placeholder="z. B. Lea">
+      <label>Ton</label>
+      <div class="chips"><button class="chip" id="soundchip">🔊 an</button></div>
+    </div>
+    <div class="card">
+      <h3 id="set-subj-title">Einstellungen</h3>
+      <div id="set-math">
+        <label>Welche Reihen?</label>
+        <div class="chips" id="rowchips"></div>
+      </div>
+      <div id="set-voc">
+        <label>Artikel mitprüfen (der/die/das, de/het)?</label>
+        <div class="chips" id="artchips"></div>
+        <p class="small" style="margin-top:8px">✍️ Handschrift: In den Gboard-Einstellungen unter <b>Sprachen</b> das Layout <b>„Handschrift“</b> hinzufügen (für Deutsch, Englisch, Niederländisch). Beim Üben mit der 🌐-Taste umschalten.</p>
+      </div>
+      <label>Aufgaben pro Runde</label>
+      <div class="chips" id="lenchips"></div>
+      <label>Tagesziel (Runden pro Tag)</label>
+      <div class="chips" id="goalchips"></div>
+    </div>
+    <div class="card">
+      <h3>📊 Häufigste Fehler (dieses Fach)</h3>
+      <div class="statlist" id="set-weak"></div>
+      <div style="margin-top:12px"><button class="btn2 red" id="btn-reset">Dieses Fach zurücksetzen</button></div>
+    </div>
+  </div>
+</section>
+</div>
+
+<script src="vokabeln.js"></script>
+<script>
+"use strict";
+/* ================= Speicher ================= */
+const KEY = "einmaleins_v1";
+const rndTopic = () => "einmaleins-" + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
+const AVATARS = ["🦊","🐼","🦄","🐯","🐸","🐙","🦖","👾","🐱","🐶","🦁","🐧","🐬","🦋","🤖","🐲"];
+const SUBJ = {
+  math: { name: "1×1",            icon: "🧮", title: "1×1 Champion" },
+  en:   { name: "Englisch",       icon: "🇬🇧", title: "English Champion", lang: "en-GB", short: "EN" },
+  nl:   { name: "Niederländisch", icon: "🇳🇱", title: "Nederlands Champion", lang: "nl-NL", short: "NL" }
+};
+const VOC = window.VOKABELN || { en: [], nl: [] };
+const subjDefaults = id => Object.assign({
+  xp: 0, totalRight: 0, streak: 0, lastDay: "", roundsDay: "", roundsToday: 0, tasksToday: 0,
+  badges: [], rounds: 0, stats: {}, goal: 2, len: 10
+}, id === "math" ? { rows: [2,3,4,5,6,7,8,9], mode: "mul" } : { lessons: [], dir: "de2x", articles: true, len: 0 });
+const defaults = () => ({
+  name: "", topic: rndTopic(), sound: true, avatar: 0, outbox: [], cur: "math",
+  subj: { math: subjDefaults("math"), en: subjDefaults("en"), nl: subjDefaults("nl") }
+});
+let S;
+try { S = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { S = {}; }
+if (!S.subj) { // Umstieg von der reinen 1×1-Version: Fortschritt übernehmen
+  const old = S, m = subjDefaults("math");
+  for (const k of Object.keys(m)) if (old[k] !== undefined) m[k] = old[k];
+  S = Object.assign(defaults(), { name: old.name || "", topic: old.topic || rndTopic(), sound: old.sound !== false,
+    avatar: old.avatar || 0, outbox: old.outbox || [] });
+  S.subj.math = m;
+}
+S = Object.assign(defaults(), S);
+for (const id of Object.keys(SUBJ)) S.subj[id] = Object.assign(subjDefaults(id), S.subj[id] || {});
+const save = () => { try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} };
+save();
+const P = () => S.subj[S.cur];
+const isVoc = () => S.cur !== "math";
+
+const $ = id => document.getElementById(id);
+const show = id => { document.querySelectorAll(".screen").forEach(s => s.classList.remove("active")); $(id).classList.add("active"); };
+const dayStr = d => { d = d || new Date(); return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); };
+const fmtTime = s => Math.floor(s/60) + ":" + String(Math.round(s%60)).padStart(2,"0");
+const de = n => n.toFixed(1).replace(".", ",");
+const pick = a => a[Math.floor(Math.random()*a.length)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function toast(t){ const el=$("toast"); el.textContent=t; el.classList.add("show"); clearTimeout(toast.h); toast.h=setTimeout(()=>el.classList.remove("show"),1800); }
+function rolloverDay(p){ const t=dayStr(); if(p.roundsDay!==t){ p.roundsDay=t; p.roundsToday=0; p.tasksToday=0; save(); } }
+
+for (let i = 0; i < 26; i++) {
+  const s = document.createElement("div"); s.className = "star"; s.textContent = pick(["✦","✧","·","★"]);
+  s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*100}%;font-size:${8+Math.random()*14}px;animation-delay:${-Math.random()*3}s`;
+  $("bg").appendChild(s);
+}
+
+/* ================= Vokabel-Prüfung ================= */
+const ART = /^(der|die|das|den|dem|ein|eine|de|het|een|the|a|an|to)\s+/i;
+function norm(s, articles){
+  s = String(s).toLowerCase().normalize("NFC").replace(/[’`´]/g, "'").replace(/[.!?,;:]+$/g, "").replace(/\s+/g, " ").trim();
+  if (!articles) s = s.replace(ART, "");
+  return s;
+}
+function variants(answer){
+  const out = new Set();
+  for (const a of String(answer).split(/\s*\/\s*/)) {
+    out.add(a.trim());
+    if (a.includes("(")) { out.add(a.replace(/\([^)]*\)/g, "").replace(/\s+/g," ").trim()); out.add(a.replace(/[()]/g, "").trim()); }
+  }
+  return [...out].filter(Boolean);
+}
+function isCorrect(input, answer, articles){
+  const n = norm(input, articles);
+  return variants(answer).some(v => norm(v, articles) === n);
+}
+function lev(a, b){
+  const d = Array.from({length: a.length+1}, (_, i) => [i]);
+  for (let j = 1; j <= b.length; j++) d[0][j] = j;
+  for (let i = 1; i <= a.length; i++) for (let j = 1; j <= b.length; j++)
+    d[i][j] = Math.min(d[i-1][j]+1, d[i][j-1]+1, d[i-1][j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+  return d[a.length][b.length];
+}
+// markiert Buchstaben: im richtigen Wort fehlende/falsche gelb-rot, im getippten Wort überzählige durchgestrichen
+function diffHtml(typed, correct){
+  const a = typed.toLowerCase(), b = correct.toLowerCase();
+  const L = Array.from({length: a.length+1}, () => new Array(b.length+1).fill(0));
+  for (let i = a.length-1; i >= 0; i--) for (let j = b.length-1; j >= 0; j--)
+    L[i][j] = a[i] === b[j] ? L[i+1][j+1] + 1 : Math.max(L[i+1][j], L[i][j+1]);
+  const inA = new Array(a.length).fill(false), inB = new Array(b.length).fill(false);
+  let i = 0, j = 0;
+  while (i < a.length && j < b.length) {
+    if (a[i] === b[j]) { inA[i] = inB[j] = true; i++; j++; }
+    else if (L[i+1][j] >= L[i][j+1]) i++; else j++;
+  }
+  const c = [...correct].map((ch, k) => inB[k] ? esc(ch) : `<span class="x">${esc(ch)}</span>`).join("");
+  const t = [...typed].map((ch, k) => inA[k] ? esc(ch) : `<span class="m">${esc(ch)}</span>`).join("");
+  return { c, t };
+}
+function bestVariant(input, answer, articles){
+  const n = norm(input, articles);
+  return variants(answer).map(v => [v, lev(n, norm(v, articles))]).sort((x, y) => x[1] - y[1])[0][0];
+}
+
+/* ================= Vorlesen ================= */
+function speak(text, lang){
+  if (!("speechSynthesis" in window) || !S.sound) return;
+  try {
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(String(text).split(/\s*\/\s*/)[0]);
+    u.lang = lang; u.rate = .9;
+    const v = speechSynthesis.getVoices().find(v => v.lang && v.lang.replace("_","-").toLowerCase().startsWith(lang.slice(0,2)));
+    if (v) u.voice = v;
+    speechSynthesis.speak(u);
+  } catch (e) {}
+}
+if ("speechSynthesis" in window) speechSynthesis.getVoices();
+
+/* ================= Rechenweg ================= */
+const NICE = [10, 1, 2, 5, 9, 4, 3];
+const rank = f => { const i = NICE.indexOf(f); return i < 0 ? 99 : i; };
+function wayMul(a, b) {
+  const r = a * b;
+  let x, y;
+  if (rank(a) < rank(b)) { y = a; x = b; }
+  else if (rank(b) < rank(a)) { y = b; x = a; }
+  else { y = Math.max(a, b); x = Math.min(a, b); }
+  const lines = [`${a} · ${b}`];
+  if (!(x === a && y === b) && a !== b) lines.push(`= ${x} · ${y} <span class="sm">(Tauschaufgabe)</span>`);
+  let hint;
+  switch (y) {
+    case 1:  hint = "Mal 1: Die Zahl bleibt gleich."; break;
+    case 10: hint = "Mal 10: Einfach eine Null anhängen."; break;
+    case 2:  hint = "Mal 2 heißt verdoppeln."; lines.push(`= ${x} + ${x}`); break;
+    case 5:  hint = "Mal 5 ist die Hälfte von mal 10."; lines.push(`= ${x} · 10 : 2`, `= ${x*10} : 2`); break;
+    case 9:  hint = "Mal 9 = mal 10, dann einmal abziehen."; lines.push(`= ${x} · 10 − ${x}`, `= ${x*10} − ${x}`); break;
+    case 4:  hint = "Mal 4 = zweimal verdoppeln."; lines.push(`= ${x} · 2 · 2`, `= ${x*2} · 2`); break;
+    case 3:  hint = "Mal 3 = mal 2 und noch einmal dazu."; lines.push(`= ${x} · 2 + ${x}`, `= ${x*2} + ${x}`); break;
+    default: hint = `Zerlegen: ${y} = 5 + ${y-5}. Erst mal 5, dann den Rest.`;
+             lines.push(`= ${x} · 5 + ${x} · ${y-5}`, `= ${x*5} + ${x*(y-5)}`);
+  }
+  lines.push(`<span class="res">= ${r}</span>`);
+  return { hint, lines };
+}
+function wayDiv(d, b, q) {
+  const m = wayMul(q, b);
+  return { hint: `Denk an die Malaufgabe: ? · ${b} = ${d}`,
+    lines: [`${d} : ${b} = ?`, `<span class="sm">Probe mit Malrechnen:</span>`].concat(m.lines).concat([`<span class="res">also ${d} : ${b} = ${q}</span>`]) };
+}
+
+/* ================= Effekte ================= */
+const cv = $("fx"), cx = cv.getContext("2d");
+let parts = [], running = false, DPR = 1;
+function resize(){ DPR = Math.min(devicePixelRatio || 1, 2); cv.width = innerWidth*DPR; cv.height = innerHeight*DPR; }
+addEventListener("resize", resize); resize();
+const COLORS = ["#ffd23f","#ff2e93","#00d68f","#2f80ff","#8a3ffc","#ff8a00","#00e0ff","#a6ff00","#ffffff"];
+const MAX = 1100;
+function add(p){ if (parts.length < MAX) parts.push(p); if (!running) { running = true; requestAnimationFrame(tick); } }
+function base(x,y,vx,vy,o){ return Object.assign({x:x*DPR,y:y*DPR,vx:vx*DPR,vy:vy*DPR,g:.32,drag:.985,s:(6+Math.random()*8)*DPR,c:pick(COLORS),
+  r:Math.random()*6,vr:(Math.random()-.5)*.35,life:160,max:160,type:Math.random()<.3?"circle":"rect",sw:0,ph:Math.random()*6},o||{}); }
+// Explosion an einer Stelle
+function burst(x, y, n, power){
+  for (let i=0;i<n;i++){ const a=-Math.PI/2+(Math.random()-.5)*Math.PI*1.5, sp=(power||12)*(.4+Math.random());
+    add(base(x,y,Math.cos(a)*sp,Math.sin(a)*sp,{life:110+Math.random()*60})); }
+}
+// Konfetti-Regen von oben
+function rain(n, dur){
+  dur = dur || 0;
+  for (let i=0;i<n;i++){
+    const spawn = () => add(base(Math.random()*innerWidth, -20-Math.random()*60, (Math.random()-.5)*2, 2+Math.random()*3,
+      {g:.06, drag:.995, sw:1.2+Math.random()*1.5, life:400, max:400}));
+    if (dur) setTimeout(spawn, Math.random()*dur); else spawn();
+  }
+}
+// Emoji-Regen
+function emojiRain(list, n, dur){
+  for (let i=0;i<n;i++) setTimeout(() => add(base(Math.random()*innerWidth, -40, (Math.random()-.5)*2, 3+Math.random()*3,
+    {g:.08, drag:.995, type:"emoji", ch:pick(list), s:(26+Math.random()*20)*DPR, vr:(Math.random()-.5)*.08, sw:.6, life:400, max:400})), Math.random()*(dur||600));
+}
+// Feuerwerk
+function firework(x, y){
+  const c = pick(COLORS), n = 60;
+  for (let i=0;i<n;i++){ const a=i/n*Math.PI*2, sp=3+Math.random()*5;
+    add(base(x,y,Math.cos(a)*sp,Math.sin(a)*sp,{g:.07,drag:.965,type:"spark",c:Math.random()<.2?"#fff":c,s:(2.5+Math.random()*2)*DPR,life:70+Math.random()*30,max:100})); }
+  beep([900+Math.random()*400], .06, "sine", .06);
+}
+function fireworks(k, dur){ for (let i=0;i<k;i++) setTimeout(() => firework(innerWidth*(.15+Math.random()*.7), innerHeight*(.12+Math.random()*.35)), i*(dur||1500)/k); }
+function emojiPop(x, y, ch){ for (let i=0;i<5;i++) add(base(x,y,(Math.random()-.5)*8,-6-Math.random()*6,{type:"emoji",ch,s:(30+Math.random()*14)*DPR,g:.25,life:90,max:90})); }
+function flash(color){ const f=$("flash"); f.style.background=`radial-gradient(circle at 50% 45%, ${color}, transparent 70%)`; f.style.opacity=".75"; setTimeout(()=>f.style.opacity="0",120); }
+function tick(){
+  cx.clearRect(0,0,cv.width,cv.height);
+  parts = parts.filter(p => p.life > 0 && p.y < cv.height + 60*DPR);
+  for (const p of parts){
+    p.vy += p.g*DPR*.5; p.vx *= p.drag; p.vy *= p.drag; p.ph += .08;
+    p.x += p.vx + (p.sw ? Math.sin(p.ph)*p.sw*DPR : 0); p.y += p.vy; p.r += p.vr; p.life--;
+    cx.save(); cx.translate(p.x,p.y); cx.globalAlpha = Math.max(0, Math.min(1, p.life/40));
+    if (p.type === "emoji"){ cx.rotate(p.r*.3); cx.font = `${p.s}px serif`; cx.textAlign="center"; cx.textBaseline="middle"; cx.fillText(p.ch,0,0); }
+    else if (p.type === "spark"){ cx.globalCompositeOperation="lighter"; cx.fillStyle=p.c; cx.beginPath(); cx.arc(0,0,p.s,0,7); cx.fill(); }
+    else { cx.rotate(p.r); cx.scale(1, Math.cos(p.ph*2)); cx.fillStyle=p.c;
+      if (p.type === "circle"){ cx.beginPath(); cx.arc(0,0,p.s/2,0,7); cx.fill(); } else cx.fillRect(-p.s/2,-p.s/4,p.s,p.s/2); }
+    cx.restore();
+  }
+  if (parts.length) requestAnimationFrame(tick); else { running=false; cx.clearRect(0,0,cv.width,cv.height); }
+}
+function praise(text){ const p=$("praise"); p.textContent=text; p.classList.remove("show"); void p.offsetWidth; p.classList.add("show"); }
+function mega(text){ const m=$("megabanner"); m.textContent=text; m.classList.remove("show"); void m.offsetWidth; m.classList.add("show"); }
+
+/* ================= Ton ================= */
+let ac;
+function beep(freqs, dur, type, vol){
+  if (!S.sound) return;
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    freqs.forEach((f,i) => { const o=ac.createOscillator(), g=ac.createGain(), t=ac.currentTime+i*dur;
+      o.type = type || "triangle"; o.frequency.value = f; o.connect(g); g.connect(ac.destination);
+      g.gain.setValueAtTime(vol || .18, t); g.gain.exponentialRampToValueAtTime(.001, t+dur*1.3); o.start(t); o.stop(t+dur*1.4); });
+  } catch(e){}
+}
+const sOk = c => beep([523*Math.pow(1.06, Math.min(c,12)), 784*Math.pow(1.06, Math.min(c,12))], .08);
+const sBad = () => beep([300, 200], .14, "sawtooth", .08);
+const sWin = () => beep([523,659,784,1047,1319], .12);
+
+/* ================= Aufgaben ================= */
+function keyOf(t){
+  if (t.kind === "voc") return `${t.dir}|${t.lesson}|${t.w[0]}`;
+  return t.op === "mul" ? `${Math.min(t.a,t.b)}·${Math.max(t.a,t.b)}` : `${t.a*t.b}:${t.b}`;
+}
+const promptOf = t => t.kind === "voc" ? (t.dir === "de2x" ? t.w[0] : t.w[1]) : (t.op === "mul" ? `${t.a} · ${t.b}` : `${t.a*t.b} : ${t.b}`);
+const answerOf = t => t.kind === "voc" ? (t.dir === "de2x" ? t.w[1] : t.w[0]) : String(t.op === "mul" ? t.a * t.b : t.a);
+const labelOf = t => t.kind === "voc" ? `${promptOf(t)} → ${answerOf(t).split(/\s*\/\s*/)[0]}` : promptOf(t);
+const lessonsOf = id => (VOC[id] || []);
+function activeLessons(){ const p = P(), all = lessonsOf(S.cur).map((_, i) => i); const sel = (p.lessons || []).filter(i => i < all.length); return sel.length ? sel : all; }
+
+function weighted(cands, n){
+  const out = [], used = new Set();
+  while (out.length < n && cands.length) {
+    const sum = cands.reduce((s, c) => s + c.w, 0);
+    let x = Math.random() * sum, i = 0;
+    for (; i < cands.length; i++) { x -= cands[i].w; if (x <= 0) break; }
+    const c = cands.splice(Math.min(i, cands.length-1), 1)[0], k = keyOf(c.t).replace(/^(de2x|x2de)\|/, "");
+    if (used.has(k) && cands.length >= n - out.length) continue;
+    used.add(k); out.push(c.t);
+  }
+  return out;
+}
+function weightOf(t){ const st = P().stats[keyOf(t)] || {r:0, w:0}; return Math.max(0.25, 1 + st.w * 2.5 - st.r * 0.3); }
+function buildRound(){
+  const p = P(), cands = [];
+  if (!isVoc()) {
+    const rows = p.rows.length ? p.rows : [2,3,4,5,6,7,8,9];
+    for (const r of rows) for (let a = 1; a <= 10; a++) for (const op of (p.mode === "mix" ? ["mul","div"] : [p.mode])) {
+      const t = op === "mul" ? (Math.random() < .5 ? {kind:"math", op, a, b: r} : {kind:"math", op, a: r, b: a}) : {kind:"math", op, a, b: r};
+      cands.push({t, w: weightOf(t) * (a === 1 || a === 10 ? .35 : 1)});
+    }
+  } else {
+    for (const li of activeLessons()) for (const w of lessonsOf(S.cur)[li].words) {
+      const dirs = p.dir === "mix" ? [Math.random() < .5 ? "de2x" : "x2de"] : [p.dir];
+      for (const dir of dirs) { const t = {kind:"voc", lesson: li, w, dir}; cands.push({t, w: weightOf(t)}); }
+    }
+  }
+  return weighted(cands, p.len > 0 ? p.len : cands.length);
+}
+
+/* ================= Abzeichen ================= */
+const BADGES = [
+  {id:"erste",  ic:"🎈", n:"Erste Runde"}, {id:"perfekt",ic:"💎", n:"Fehlerfrei"},
+  {id:"combo10",ic:"🔥", n:"10er-Serie"},  {id:"blitz",  ic:"⚡", n:"Blitz"},
+  {id:"ziel",   ic:"🎯", n:"Tagesziel"},   {id:"tage3",  ic:"📅", n:"3 Tage"},
+  {id:"tage7",  ic:"🏆", n:"7 Tage"},      {id:"boss",   ic:"⚔️", n:"Boss besiegt"},
+  {id:"r100",   ic:"💯", n:"100 richtig"}, {id:"r500",   ic:"👑", n:"500 richtig"},
+  {id:"lvl5",   ic:"🚀", n:"Level 5"},     {id:"lvl10",  ic:"🌌", n:"Level 10"},
+];
+const level = xp => Math.floor(Math.sqrt(xp/40)) + 1;
+const xpFor = l => (l-1)*(l-1)*40;
+
+/* ================= Home ================= */
+function currentStreak(p){ const y=new Date(); y.setDate(y.getDate()-1); return (p.lastDay===dayStr()||p.lastDay===dayStr(y)) ? p.streak : 0; }
+const isBoss = v => v.w > 0 && v.w*2 > v.r - 1;
+function bossList(n){
+  return Object.entries(P().stats).filter(([k,v]) => isBoss(v))
+    .sort((p,q) => (q[1].w*2-q[1].r) - (p[1].w*2-p[1].r)).slice(0,n)
+    .map(([k,v]) => v.l || k.replace("·"," · ").replace(":"," : "));
+}
+function renderHome(){
+  const p = P(); rolloverDay(p);
+  document.body.dataset.subj = S.cur;
+  document.querySelectorAll("#tabs .tab").forEach(t => t.classList.toggle("on", t.dataset.s === S.cur));
+  $("apptitle").textContent = SUBJ[S.cur].title;
+  $("avatar").textContent = AVATARS[S.avatar % AVATARS.length];
+  $("hello").textContent = S.name ? `Hey ${S.name}!` : "Hey du!";
+  const L = level(p.xp), a = xpFor(L), b = xpFor(L+1);
+  $("lvl").textContent = `${SUBJ[S.cur].icon} Level ${L}`;
+  $("xptxt").textContent = `Noch ${b - p.xp} XP bis Level ${L+1}`;
+  $("xpbar").style.width = ((p.xp-a)/(b-a)*100) + "%";
+  $("st-streak").textContent = currentStreak(p) + "🔥";
+  $("st-total").textContent = p.totalRight;
+  $("st-goal").textContent = `${Math.min(p.roundsToday,p.goal)}/${p.goal}` + (p.roundsToday >= p.goal ? " ✅" : "");
+  $("goalbar").innerHTML = Array.from({length:p.goal}, (_,i) => `<i class="${i<p.roundsToday?"on":""}"></i>`).join("");
+  $("btn-start").textContent = p.roundsToday >= p.goal ? "BONUS-RUNDE! 🌟" : "LOS GEHT'S! 🚀";
+  $("mathcard").style.display = isVoc() ? "none" : "";
+  $("voccard").style.display = isVoc() ? "" : "none";
+  if (!isVoc()) document.querySelectorAll("#modechips .chip").forEach(c => c.classList.toggle("on", c.dataset.mode === p.mode));
+  else {
+    const ls = lessonsOf(S.cur), sel = p.lessons || [];
+    $("lessonchips").innerHTML = ls.length
+      ? `<button class="chip ${sel.length ? "" : "on"}" data-l="all">Alle</button>` + ls.map((l,i) => `<button class="chip ${sel.includes(i)?"on":""}" data-l="${i}">${esc(l.name)} <small>(${l.words.length})</small></button>`).join("")
+      : `<p class="small">Noch keine Vokabeln eingetragen.</p>`;
+    const sh = SUBJ[S.cur].short;
+    $("dirchips").innerHTML = [["de2x",`🇩🇪 → ${SUBJ[S.cur].icon}`],["x2de",`${SUBJ[S.cur].icon} → 🇩🇪`],["mix","🎲 Gemischt"]]
+      .map(([d,t]) => `<button class="chip ${p.dir===d?"on":""}" data-d="${d}">${t}</button>`).join("");
+  }
+  $("bosstitle").textContent = isVoc() ? "👾 Boss-Vokabeln – besieg sie!" : "👾 Boss-Aufgaben – besieg sie!";
+  $("badges").innerHTML = BADGES.map(b => `<div class="badge ${p.badges.includes(b.id)?"got":""}"><div>${b.ic}</div>${b.n}</div>`).join("");
+  const boss = bossList(8);
+  $("bosscard").style.display = boss.length ? "" : "none";
+  $("bosslist").innerHTML = boss.map(w => `<span>${esc(w)}</span>`).join("");
+}
+$("tabs").onclick = e => { const t = e.target.closest(".tab"); if (!t || t.dataset.s === S.cur) return;
+  S.cur = t.dataset.s; save(); renderHome(); beep([600,900],.05); const r = t.getBoundingClientRect(); burst(r.left+r.width/2, r.top+r.height/2, 30, 9); };
+document.querySelectorAll("#modechips .chip").forEach(c => c.onclick = () => { P().mode = c.dataset.mode; save(); renderHome(); beep([660],.05); });
+$("lessonchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; const p = P();
+  if (c.dataset.l === "all") p.lessons = []; else { const i = +c.dataset.l; p.lessons = p.lessons.includes(i) ? p.lessons.filter(x => x !== i) : p.lessons.concat(i); }
+  save(); renderHome(); beep([660],.05); };
+$("dirchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().dir = c.dataset.d; save(); renderHome(); beep([660],.05); };
+$("avatar").onclick = e => { S.avatar = (S.avatar+1) % AVATARS.length; save(); renderHome();
+  const r = e.currentTarget.getBoundingClientRect(); burst(r.left+r.width/2, r.top+r.height/2, 25, 9); beep([700,900],.05); };
+
+/* ================= Vokabelliste ================= */
+let cover = "none";
+function renderList(){
+  const id = S.cur, sb = SUBJ[id], p = P(), ls = lessonsOf(id);
+  $("list-title").textContent = `📖 ${sb.icon} ${sb.name}`;
+  $("coverchips").innerHTML = [["none","👀 Alles zeigen"],["de","🇩🇪 verdecken"],["fx",`${sb.icon} verdecken`]]
+    .map(([c,t]) => `<button class="chip ${cover===c?"on":""}" data-c="${c}">${t}</button>`).join("");
+  const weak = (li, de) => ["de2x","x2de"].some(d => { const st = p.stats[`${d}|${li}|${de}`]; return st && st.w > 0; });
+  const total = ls.reduce((n, l) => n + l.words.length, 0);
+  $("vlist").innerHTML = ls.length ? ls.map((l, li) => `
+    <div class="card">
+      <h3>${esc(l.name)} <span class="listcount">· ${l.words.length} Wörter</span></h3>
+      <div class="vhead"><span>${sb.icon} ${sb.name}</span><span>🇩🇪 Deutsch</span></div>
+      ${l.words.map(([de, fx], wi) => `
+        <div class="vrow">
+          <div class="fx"><button class="say" data-li="${li}" data-wi="${wi}" aria-label="Anhören">🔊</button><span class="${cover==="fx"?"cov":""}">${esc(fx.replace(/\s*\/\s*/g, " / "))}</span>${weak(li, de) ? ' <span class="weakdot">👾</span>' : ""}</div>
+          <div class="dx"><span class="${cover==="de"?"cov":""}">${esc(de)}</span></div>
+        </div>`).join("")}
+    </div>`).join("") + `<p class="small center" style="color:#fff">${total} Vokabeln insgesamt</p>`
+    : `<div class="card"><p class="small">Noch keine Vokabeln eingetragen.</p></div>`;
+}
+$("btn-list").onclick = () => { cover = "none"; renderList(); show("s-list"); $("vlist").scrollTop = 0; beep([660,880],.05); };
+$("btn-list-back").onclick = () => { try { window.speechSynthesis && speechSynthesis.cancel(); } catch (e) {} renderHome(); show("s-home"); };
+$("coverchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; cover = c.dataset.c; renderList(); beep([660],.05); };
+$("vlist").onclick = e => {
+  const b = e.target.closest(".say");
+  if (b) { const w = lessonsOf(S.cur)[+b.dataset.li].words[+b.dataset.wi]; speak(w[1], SUBJ[S.cur].lang); return; }
+  const c = e.target.closest(".cov"); if (c) { c.classList.remove("cov"); beep([880],.04); }
+};
+
+/* ================= Spiel ================= */
+let G = null;
+const PRAISE = ["Krass! 🤩","Boom! 💥","Mega! 🚀","Hammer! 🔨","Läuft! 😎","Stark! 💪","Genial! 🧠","Yesss! 🙌","Wow! ✨","Top! 🏆","Perfekt! 💯","Nice! 👌","Legendär! 👑","Raketenstark! 🚀"];
+const EMOJIS = ["🎉","⭐","🔥","💎","🚀","🦄","🍕","🌈","⚡","🏆","😎","💯"];
+
+function startRound(){
+  const tasks = buildRound();
+  if (!tasks.length) { toast("Hier sind noch keine Vokabeln drin 📸"); return; }
+  G = { subj: S.cur, queue: tasks.slice(), total: tasks.length, done: 0, firstTry: 0, combo: 0, maxCombo: 0, xp: 0, hints: 0,
+        errors: [], wrongKeys: new Set(), bossWins: 0, times: [], start: Date.now(), cur: null, input: "", locked: false, tStart: 0, hint: 0 };
+  G.bossKeys = new Set(Object.entries(P().stats).filter(([k,v]) => isBoss(v)).map(([k]) => k));
+  const voc = isVoc();
+  $("keypad").style.display = voc ? "none" : "";
+  $("answer").style.display = voc ? "none" : "";
+  $("vocbox").style.display = voc ? "flex" : "none";
+  $("task").classList.toggle("voc", voc);
+  show("s-game"); updateCombo(); nextTask();
+}
+function nextTask(){
+  if (!G) return;
+  if (!G.queue.length) return finishRound();
+  G.cur = G.queue.shift(); G.input = ""; G.locked = false; G.tStart = Date.now(); G.hint = 0;
+  const t = G.cur;
+  $("way").classList.remove("show");
+  $("prog").style.width = (G.done / G.total * 100) + "%";
+  if (t.kind === "voc") {
+    const sb = SUBJ[G.subj], toForeign = t.dir === "de2x";
+    $("qsub").textContent = toForeign ? `Was heißt das auf ${sb.name}? ${sb.icon}` : "Was heißt das auf Deutsch? 🇩🇪";
+    $("task").textContent = promptOf(t);
+    $("qspeak").style.display = toForeign ? "none" : "";
+    const inp = $("vocin"); inp.value = ""; inp.className = "vocin"; inp.disabled = false;
+    inp.lang = toForeign ? sb.lang : "de-DE"; inp.placeholder = "Hier schreiben …";
+    setTimeout(() => inp.focus(), 50);
+    if (!toForeign) setTimeout(() => speak(promptOf(t), sb.lang), 250);
+  } else {
+    $("qsub").textContent = "";
+    $("qspeak").style.display = "none";
+    $("task").textContent = promptOf(t) + " =";
+    $("answer").className = "answer"; $("answer").innerHTML = "&nbsp;";
+  }
+}
+function press(k){
+  if (!G || G.locked) return;
+  if (k === "del") G.input = G.input.slice(0,-1);
+  else if (k === "ok") return check();
+  else if (G.input.length < 3) G.input += k;
+  $("answer").innerHTML = G.input || "&nbsp;";
+  beep([440 + (+k||0)*30], .03, "sine", .06);
+}
+function celebrate(){
+  const c = G.combo, el = G.cur.kind === "voc" ? $("vocin") : $("answer");
+  const r = el.getBoundingClientRect(), x = r.left + r.width/2, y = r.top + r.height/2;
+  flash("rgba(0,255,170,.55)");
+  burst(x, y, 50 + Math.min(c,10)*8, 13);
+  rain(40 + Math.min(c,10)*12);
+  emojiPop(x, y, pick(EMOJIS));
+  const tc = $("taskcard"); tc.classList.remove("bounce"); void tc.offsetWidth; tc.classList.add("bounce");
+  if (c >= 3) emojiRain(EMOJIS, 8 + c*2, 700);
+  if (c >= 5) fireworks(Math.min(2 + Math.floor((c-5)/2), 5), 900);
+  if (c === 5 || c === 10 || c === 15 || c === 20) { mega(c === 10 ? "MEGA-SERIE! 🔥🔥" : `${c}er-SERIE! 🔥`); beep([784,988,1175,1568],.09); }
+  praise(pick(PRAISE));
+  if (navigator.vibrate) navigator.vibrate(c >= 5 ? [30,40,30] : 25);
+}
+function check(){
+  if (!G || G.locked) return;
+  const t = G.cur, voc = t.kind === "voc";
+  const raw = voc ? $("vocin").value.trim() : G.input;
+  if (!raw) return;
+  G.locked = true;
+  const p = S.subj[G.subj], k = keyOf(t), right = answerOf(t);
+  const ok = voc ? isCorrect(raw, right, p.articles) : parseInt(raw, 10) === +right;
+  const st = p.stats[k] || (p.stats[k] = {r:0, w:0});
+  if (voc) st.l = labelOf(t);
+  const isRetry = G.wrongKeys.has(k), secs = (Date.now() - G.tStart) / 1000;
+  if (voc) { $("vocin").blur(); $("vocin").disabled = true; }
+  if (ok) {
+    (voc ? $("vocin") : $("answer")).classList.add("ok");
+    if (!isRetry) { G.firstTry++; G.done++; st.r++; p.totalRight++; G.times.push({l: promptOf(t), s: secs});
+      if (G.bossKeys.has(k)) { G.bossWins++; G.bossKeys.delete(k); setTimeout(() => praise("Boss besiegt! ⚔️"), 450); } }
+    G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo);
+    G.xp += G.hint ? 5 : 10 + Math.min(G.combo,10) + (secs < (voc ? 8 : 4) ? 3 : 0);
+    sOk(G.combo); celebrate(); updateCombo(); save();
+    if (voc && t.dir === "de2x") setTimeout(() => speak(right, SUBJ[G.subj].lang), 350);
+    setTimeout(() => showWay(t, raw, true), 900);
+  } else {
+    (voc ? $("vocin") : $("answer")).classList.add("bad");
+    sBad(); if (navigator.vibrate) navigator.vibrate(150);
+    flash("rgba(255,61,113,.35)");
+    G.combo = 0; updateCombo();
+    if (!isRetry) { st.w++; G.done++; G.errors.push({l: promptOf(t), got: raw, right: right.split(/\s*\/\s*/)[0]}); G.wrongKeys.add(k); }
+    G.queue.splice(Math.min(G.queue.length, 2 + Math.floor(Math.random()*2)), 0, t);
+    save();
+    setTimeout(() => showWay(t, raw, false), 600);
+  }
+}
+// Lösungskarte – kommt nach JEDER Aufgabe
+function showWay(t, given, ok){
+  $("way").classList.toggle("good", ok);
+  if (t.kind === "voc") {
+    const sb = SUBJ[G.subj], p = S.subj[G.subj], right = answerOf(t), toForeign = t.dir === "de2x";
+    const target = ok ? right.split(/\s*\/\s*/)[0] : bestVariant(given, right, p.articles);
+    const alts = variants(right).filter(v => v !== target && !v.includes("("));
+    $("wayh").textContent = ok ? "Richtig geschrieben! ✍️" : "Fast! So schreibt man's ✍️";
+    $("yours").textContent = ok ? "Schau dir das Wort nochmal genau an:" : "Das Wort kommt gleich nochmal – dann packst du es!";
+    let h = `<div class="arrow">${esc(promptOf(t))} →</div>`;
+    if (ok) h += `<div class="word res">${esc(target)}</div>`;
+    else { const d = diffHtml(given, target); h += `<div class="word">${d.c}</div><div class="typed">Du: ${d.t}</div>`; }
+    if (alts.length) h += `<div class="sm" style="margin-top:6px">Auch richtig: ${alts.map(esc).join(", ")}</div>`;
+    const sayWord = toForeign ? target : promptOf(t);
+    h += `<button class="speak" data-say="${esc(sayWord)}">🔊 ${toForeign ? "Aussprache" : esc(sb.name)} anhören</button>`;
+    $("steps").innerHTML = `<div>${h}</div>`;
+    $("steps").querySelector(".speak").onclick = e => speak(e.currentTarget.dataset.say, sb.lang);
+  } else {
+    const w = t.op === "mul" ? wayMul(t.a, t.b) : wayDiv(t.a*t.b, t.b, t.a);
+    $("wayh").textContent = ok ? "Richtig! So rechnet man's 🧠" : "Knapp daneben! So geht's 🧠";
+    $("yours").textContent = ok ? `${given} ist richtig – hier nochmal der Rechenweg:` : `Du hattest ${given} – richtig ist ${answerOf(t)}. Die Aufgabe kommt gleich nochmal!`;
+    $("steps").innerHTML = `<div class="hint">💡 ${w.hint}</div>` + w.lines.map((l,i) => `<div style="animation-delay:${.1+i*(ok ? .18 : .3)}s">${l}</div>`).join("");
+  }
+  $("btn-next").textContent = G.queue.length ? "Weiter ➜" : "Zum Ergebnis 🏁";
+  $("way").classList.add("show");
+}
+function updateCombo(){
+  const c = $("combo");
+  c.textContent = G.combo >= 2 ? `🔥${G.combo}` : "";
+  c.classList.remove("hot"); void c.offsetWidth; if (G.combo >= 2) c.classList.add("hot");
+}
+$("btn-next").onclick = nextTask;
+$("btn-check").onclick = check;
+$("vocin").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); check(); } });
+$("btn-hint").onclick = () => {
+  if (!G || G.locked || G.cur.kind !== "voc") return;
+  const ans = answerOf(G.cur).split(/\s*\/\s*/)[0];
+  G.hint = Math.min(G.hint + 1, Math.max(1, ans.length - 1)); G.hints++;
+  const inp = $("vocin"); inp.value = ans.slice(0, G.hint); inp.focus();
+  beep([880],.05); toast(`💡 Fängt an mit „${ans.slice(0, G.hint)}“`);
+};
+$("qspeak").onclick = () => { if (G && G.cur && G.cur.kind === "voc") speak(promptOf(G.cur), SUBJ[G.subj].lang); };
+function twice(id, msg, fn){ let t = 0; $(id).addEventListener("click", () => { const n = Date.now(); if (n - t < 2500) { t = 0; fn(); } else { t = n; toast(msg); } }); }
+twice("btn-quit", "Nochmal tippen = Runde abbrechen", () => { G = null; renderHome(); show("s-home"); });
+const KP = ["1","2","3","4","5","6","7","8","9","del","0","ok"];
+$("keypad").innerHTML = KP.map((k,i) => `<button class="key ${k==="ok"?"ok":k==="del"?"del":"k"+(i%5)}" data-k="${k}">${k==="del"?"⌫":k==="ok"?"✓":k}</button>`).join("");
+$("keypad").addEventListener("click", e => { const b = e.target.closest(".key"); if (b) press(b.dataset.k); });
+addEventListener("keydown", e => {
+  if (!$("s-game").classList.contains("active") || !G) return;
+  if ($("way").classList.contains("show")) { if (e.key === "Enter") { e.preventDefault(); nextTask(); } return; }
+  if (G.cur && G.cur.kind === "voc") return;
+  if (/^[0-9]$/.test(e.key)) press(e.key); else if (e.key === "Backspace") press("del"); else if (e.key === "Enter") press("ok");
+});
+
+/* ================= Rundenende ================= */
+// 5 Sterne: 100 % = 5, ab 90 % = 4, ab 75 % = 3, ab 50 % = 2, sonst 1 (gezählt wird der erste Versuch)
+const starsFor = pct => pct >= 100 ? 5 : pct >= 90 ? 4 : pct >= 75 ? 3 : pct >= 50 ? 2 : 1;
+const starLine = n => "⭐".repeat(n) + "☆".repeat(5 - n);
+const STAR_TXT = ["", "Jede Runde macht dich besser – dranbleiben!", "Guter Anfang – beim nächsten Mal klappt noch mehr!",
+  "Richtig solide – nur noch ein paar Wörter üben!", "Fast perfekt – nur ganz knapp an 5 Sternen vorbei!", "Alles beim ersten Versuch richtig – Champion! 👑"];
+function finishRound(){
+  const p = S.subj[G.subj], voc = G.subj !== "math";
+  const secs = (Date.now() - G.start)/1000, avg = secs / G.total;
+  const pct = Math.round(G.firstTry / G.total * 100);
+  const stars = starsFor(pct);
+  if (pct === 100) G.xp += 30;
+  const oldLevel = level(p.xp);
+  p.xp += G.xp; p.rounds++;
+  const today = dayStr(), y = new Date(); y.setDate(y.getDate()-1);
+  if (p.lastDay !== today) { p.streak = (p.lastDay === dayStr(y)) ? p.streak + 1 : 1; p.lastDay = today; }
+  rolloverDay(p); p.roundsToday++; p.tasksToday += G.total;
+  const goalJustReached = p.roundsToday === p.goal;
+  const newLevel = level(p.xp);
+
+  const earned = [];
+  const give = id => { if (!p.badges.includes(id)) { p.badges.push(id); earned.push(BADGES.find(b => b.id === id)); } };
+  give("erste");
+  if (pct === 100) give("perfekt");
+  if (G.maxCombo >= 10) give("combo10");
+  if (avg < (voc ? 6 : 3) && pct >= 80) give("blitz");
+  if (p.roundsToday >= p.goal) give("ziel");
+  if (p.streak >= 3) give("tage3");
+  if (p.streak >= 7) give("tage7");
+  if (G.bossWins > 0) give("boss");
+  if (p.totalRight >= 100) give("r100");
+  if (p.totalRight >= 500) give("r500");
+  if (newLevel >= 5) give("lvl5");
+  if (newLevel >= 10) give("lvl10");
+  save();
+
+  $("res-title").textContent = ["", "Geschafft! 💪", "Gut gemacht! 👍", "Richtig stark! 🙌", "MEGA! 🎉", "PERFEKT! 👑"][stars];
+  $("res-score").textContent = `${G.firstTry} / ${G.total}`;
+  $("res-sub").textContent = STAR_TXT[stars];
+  $("res-time").textContent = fmtTime(secs);
+  $("res-avg").textContent = de(avg) + " s";
+  $("res-xp").textContent = "+" + G.xp;
+  let extra = "";
+  if (newLevel > oldLevel) extra += `<div class="newbadge"><div>⬆️</div><b>LEVEL UP! ${SUBJ[G.subj].name}: Level ${newLevel}!</b></div>`;
+  if (goalJustReached) extra += `<div class="newbadge"><div>🎯</div><b>Tagesziel ${SUBJ[G.subj].name} geschafft!</b></div>`;
+  if (G.bossWins) extra += `<div class="newbadge"><div>⚔️</div><b>${G.bossWins} Boss-${voc ? "Vokabel" : "Aufgabe"}${G.bossWins>1?"n":""} besiegt!</b></div>`;
+  extra += earned.map(b => `<div class="newbadge"><div>${b.ic}</div><b>Neues Abzeichen: ${b.n}!</b></div>`).join("");
+  $("res-extra").innerHTML = extra;
+  [...$("res-extra").children].forEach((c,i) => c.style.animationDelay = (1.4 + i*.3) + "s");
+  $("res-errcard").style.display = G.errors.length ? "" : "none";
+  $("res-errtitle").textContent = voc ? "👾 Neue Boss-Vokabeln:" : "👾 Neue Boss-Aufgaben:";
+  $("res-errors").innerHTML = G.errors.map(e => `<span>${esc(e.l)} = ${esc(e.right)}</span>`).join("");
+  const st = $("stars").children; [...st].forEach(s => s.classList.remove("on"));
+  show("s-result");
+  for (let i=0;i<stars;i++) setTimeout(() => { st[i].classList.add("on"); beep([600+i*150],.12);
+    const r = st[i].getBoundingClientRect(); burst(r.left+r.width/2, r.top+r.height/2, 40, 10); }, 400 + i*380);
+  setTimeout(() => {
+    sWin(); flash("rgba(255,210,63,.6)");
+    rain(80 + stars*50, 2500);
+    emojiRain(EMOJIS, stars*9, 2500);
+    if (stars >= 3) fireworks(stars === 5 ? 12 : stars === 4 ? 8 : 4, 3000);
+    if (stars === 5) setTimeout(() => { mega("5 STERNE! 👑"); rain(200, 1500); }, 1600);
+    if (newLevel > oldLevel) setTimeout(() => mega(`LEVEL ${newLevel}! ⬆️`), 900);
+    else if (goalJustReached) setTimeout(() => mega("TAGESZIEL! 🎯"), 900);
+  }, 400 + stars*380);
+
+  queueReport({ secs, avg, pct, stars, earned, newLevel, levelUp: newLevel > oldLevel });
+}
+
+/* ================= Zusammenfassung via ntfy ================= */
+function queueReport(r){
+  const id = G.subj, p = S.subj[id], sb = SUBJ[id], voc = id !== "math";
+  const name = S.name || "Dein Kind";
+  const slow = G.times.slice().sort((a,b) => b.s - a.s).filter(t => t.s >= (voc ? 12 : 6)).slice(0,3);
+  const now = new Date();
+  let what;
+  if (voc) {
+    const ls = activeLessons().map(i => lessonsOf(id)[i].name).join(", ");
+    const dirTxt = {de2x: `Deutsch → ${sb.name}`, x2de: `${sb.name} → Deutsch`, mix: "beide Richtungen"}[p.dir];
+    what = `📚 ${ls} · ${dirTxt}`;
+  } else what = `📚 ${{mul:"Mal", div:"Geteilt", mix:"Mal & Geteilt"}[p.mode]} · Reihen ${p.rows.join(", ")}`;
+  const lines = [
+    `✅ Lerneinheit abgeschlossen`,
+    `${starLine(r.stars)}  ${r.stars} von 5 Sternen`,
+    `📊 ${G.firstTry} von ${G.total} beim ersten Versuch richtig (${r.pct} %)`,
+    `⏱ ${fmtTime(r.secs)} min · Ø ${de(r.avg)} s pro ${voc ? "Vokabel" : "Aufgabe"}`,
+    what,
+    G.errors.length ? `❌ Fehler: ${G.errors.map(e => voc ? `${e.l} → ${e.right} (geschrieben: ${e.got})` : `${e.l} (${e.got} statt ${e.right})`).join(", ")}` : `💎 Keine Fehler!`
+  ];
+  if (G.hints) lines.push(`💡 Tipps genutzt: ${G.hints}`);
+  if (slow.length) lines.push(`🐢 Langsam: ${slow.map(t => `${t.l} (${Math.round(t.s)} s)`).join(", ")}`);
+  lines.push(`🔥 Beste Serie ${G.maxCombo} · ${p.streak} Tag(e) in Folge`);
+  lines.push(`🎯 Heute ${sb.name}: ${p.roundsToday} Runde(n), ${p.tasksToday} ${voc ? "Vokabeln" : "Aufgaben"}` + (p.roundsToday >= p.goal ? " – Tagesziel erreicht ✅" : ` (Ziel ${p.goal})`));
+  if (G.bossWins) lines.push(`⚔️ ${G.bossWins} alte Fehler jetzt richtig`);
+  if (r.levelUp) lines.push(`⬆️ Neues Level: ${r.newLevel}`);
+  if (r.earned.length) lines.push(`🏅 Neu: ${r.earned.map(b => b.n).join(", ")}`);
+  const boss = bossList(5);
+  if (boss.length) lines.push(`📌 Noch üben: ${boss.join(", ")}`);
+  lines.push(`🕒 ${now.toLocaleDateString("de-DE")} ${now.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`);
+  S.outbox.push({ title: `${sb.icon} ${sb.name}: ${name} ${starLine(r.stars)} (${G.firstTry}/${G.total})`, msg: lines.join("\n"),
+                  tags: r.stars >= 4 ? "tada" : r.stars >= 2 ? "+1" : "muscle" });
+  S.outbox = S.outbox.slice(-20); save();
+  $("res-notify").textContent = "📲 Zusammenfassung wird gesendet …";
+  flushOutbox().then(ok => $("res-notify").textContent = ok ? "📲 Zusammenfassung wurde gesendet" : "📲 Gerade offline – wird später automatisch nachgeschickt");
+}
+let flushing = false;
+async function flushOutbox(){
+  if (flushing || !S.topic) return !S.outbox.length;
+  flushing = true;
+  try {
+    while (S.outbox.length){
+      const m = S.outbox[0];
+      if (!(await postNtfy(m.title, m.msg, m.tags))) return false;
+      S.outbox.shift(); save();
+    }
+    return true;
+  } finally { flushing = false; }
+}
+function postNtfy(title, msg, tags){
+  const url = `https://ntfy.sh/${encodeURIComponent(S.topic)}?title=${encodeURIComponent(title)}&tags=${encodeURIComponent(tags)}`;
+  return fetch(url, { method: "POST", body: msg }).then(r => r.ok).catch(() => false);
+}
+addEventListener("online", flushOutbox);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) flushOutbox(); });
+
+/* ================= Eltern-Bereich (gedrückt halten) ================= */
+(() => {
+  const b = $("btn-settings"); let h;
+  const start = e => { e.preventDefault(); b.classList.add("holding"); h = setTimeout(() => { b.classList.remove("holding"); renderSettings(); show("s-settings"); }, 1200); };
+  const stop = () => { if (b.classList.contains("holding")) toast("Eltern-Bereich: Knopf gedrückt halten 🔒"); b.classList.remove("holding"); clearTimeout(h); };
+  b.addEventListener("pointerdown", start); b.addEventListener("pointerup", stop); b.addEventListener("pointerleave", stop); b.addEventListener("pointercancel", stop);
+  b.addEventListener("contextmenu", e => e.preventDefault());
+})();
+function renderSettings(){
+  const p = P(), voc = isVoc();
+  $("in-name").value = S.name; $("in-topic").value = S.topic;
+  $("set-subj-title").textContent = `${SUBJ[S.cur].icon} Einstellungen ${SUBJ[S.cur].name}`;
+  $("set-math").style.display = voc ? "none" : "";
+  $("set-voc").style.display = voc ? "" : "none";
+  if (!voc) $("rowchips").innerHTML = [1,2,3,4,5,6,7,8,9,10].map(r => `<button class="chip ${p.rows.includes(r)?"on":""}" data-r="${r}">${r}er</button>`).join("");
+  else $("artchips").innerHTML = `<button class="chip ${p.articles?"on":""}" data-a="1">Ja</button><button class="chip ${p.articles?"":"on"}" data-a="0">Nein</button>`;
+  $("lenchips").innerHTML = (voc ? [0,5,10,15,20] : [5,10,15,20]).map(n => `<button class="chip ${p.len===n?"on":""}" data-n="${n}">${n || "Alle"}</button>`).join("");
+  $("goalchips").innerHTML = [1,2,3,5].map(n => `<button class="chip ${p.goal===n?"on":""}" data-g="${n}">${n}</button>`).join("");
+  $("soundchip").textContent = S.sound ? "🔊 an" : "🔇 aus"; $("soundchip").classList.toggle("on", S.sound);
+  const all = Object.entries(p.stats).filter(([k,v]) => v.w > 0).sort((a,b) => b[1].w - a[1].w).slice(0,14);
+  $("set-weak").innerHTML = all.length ? all.map(([k,v]) => `<span>${esc(v.l || k)} – ${v.w}× falsch, ${v.r}× richtig</span>`).join("")
+                                      : `<span style="background:#dcfbe9;color:#007a4d">Noch keine Fehler 🎉</span>`;
+  $("pending").textContent = S.outbox.length ? `⏳ ${S.outbox.length} Zusammenfassung(en) warten aufs Senden.` : "";
+  $("test-status").textContent = "";
+}
+$("rowchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; const p = P(), r = +c.dataset.r;
+  p.rows = p.rows.includes(r) ? p.rows.filter(x => x !== r) : p.rows.concat(r).sort((a,b) => a-b);
+  if (!p.rows.length) p.rows = [r]; save(); renderSettings(); };
+$("artchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().articles = c.dataset.a === "1"; save(); renderSettings(); };
+$("lenchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().len = +c.dataset.n; save(); renderSettings(); };
+$("goalchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().goal = +c.dataset.g; save(); renderSettings(); };
+$("soundchip").onclick = () => { S.sound = !S.sound; save(); renderSettings(); };
+$("in-name").oninput = e => { S.name = e.target.value.trim(); save(); };
+$("in-topic").oninput = e => { S.topic = e.target.value.trim().replace(/[^A-Za-z0-9_-]/g, ""); save(); };
+$("btn-copy").onclick = () => { (navigator.clipboard ? navigator.clipboard.writeText(S.topic) : Promise.reject()).then(() => toast("Thema kopiert ✅"), () => { $("in-topic").select(); toast("Bitte manuell kopieren"); }); };
+$("btn-test").onclick = () => { $("test-status").textContent = "sende …";
+  postNtfy("Lern-Champion: Test ✅", `Test von ${S.name || "der Lern-App"} – die Benachrichtigung funktioniert! Nach jeder Runde kommt hier die Zusammenfassung.`, "white_check_mark")
+    .then(ok => { $("test-status").textContent = ok ? "✅ gesendet – kam es an?" : "❌ fehlgeschlagen (Internet?)"; if (ok) flushOutbox(); }); };
+twice("btn-reset", "Nochmal tippen = dieses Fach wirklich zurücksetzen", () => {
+  const p = P(), keep = {goal:p.goal, len:p.len, rows:p.rows, mode:p.mode, lessons:p.lessons, dir:p.dir, articles:p.articles};
+  S.subj[S.cur] = Object.assign(subjDefaults(S.cur), keep); save(); renderSettings(); toast("Zurückgesetzt ✅"); });
+$("btn-back").onclick = () => { renderHome(); show("s-home"); };
+
+/* ================= Start ================= */
+$("btn-start").onclick = () => { beep([523,784,1047],.07); startRound(); };
+$("btn-again").onclick = () => { S.cur = G ? G.subj : S.cur; startRound(); };
+$("btn-home").onclick = () => { renderHome(); show("s-home"); };
+renderHome();
+flushOutbox();
+if ("serviceWorker" in navigator && location.protocol.startsWith("http")) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
