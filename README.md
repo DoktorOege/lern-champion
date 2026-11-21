@@ -9,3 +9,6 @@ Live: https://1x1.kma-online.workers.dev
 
 Jeder Push auf `main` wird über Cloudflare Workers Builds automatisch veröffentlicht.
 Nach jeder fertigen Lerneinheit schickt die App eine Zusammenfassung per ntfy.
+
+## Ablauf für neue Vokabeln
+Fotos → Eintrag in `public/vokabeln.js` → Push auf `main` → Cloudflare veröffentlicht automatisch.
