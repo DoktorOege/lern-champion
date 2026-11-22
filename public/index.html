@@ -202,6 +202,13 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
   background:linear-gradient(90deg,#a6ff00,#00e0ff);box-shadow:0 6px 0 rgba(0,0,0,.25);animation:breathe 1.6s ease-in-out infinite}
 #updbar small{display:block;font-size:13px;font-weight:700;opacity:.8}
 #updbar.show{display:block}
+.testbtn{width:100%;margin-top:14px;border:0;border-radius:18px;padding:14px;font-size:18px;font-weight:900;font-family:inherit;color:#fff;
+  background:linear-gradient(90deg,#1c0f45,#5a12b8);box-shadow:0 5px 0 #0d0626}
+.testbtn small{display:block;font-size:13px;font-weight:700;opacity:.85}
+.testbtn:active{transform:translateY(3px);box-shadow:0 2px 0 #0d0626}
+.combo.timer{font-size:20px;min-width:78px;text-shadow:none;background:rgba(0,0,0,.25);border-radius:12px;padding:4px 8px;text-align:center}
+.combo.timer.low{background:#ff3d71;animation:pulse 1s ease infinite}
+.testtag{display:inline-block;background:#1c0f45;color:#fff;border-radius:99px;padding:3px 10px;font-size:13px;font-weight:900;margin-bottom:6px}
 </style>
 </head>
 <body data-subj="math">
@@ -248,6 +255,7 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
         <button class="chip" data-mode="div">➗ Geteilt</button>
         <button class="chip" data-mode="mix">🎲 Gemischt</button>
       </div>
+      <button class="testbtn" id="btn-test-mode">⏱️ TEST-MODUS<small id="test-sub">Mal & Geteilt · auf Zeit · wie im echten Test</small></button>
     </div>
     <div class="card" id="voccard">
       <h3>Welche Lektionen?</h3>
@@ -316,6 +324,7 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
       <h3 id="res-errtitle">👾 Neue Boss-Aufgaben:</h3>
       <div class="boss" id="res-errors"></div>
     </div>
+    <button class="big" id="btn-fixerrors" style="display:none;background:linear-gradient(90deg,#ffd23f,#ff8a00);box-shadow:0 9px 0 #b35600;animation:none">🛠️ FEHLER JETZT ÜBEN</button>
     <button class="big pulse" id="btn-again">NOCH EINE RUNDE! 🔁</button>
     <button class="big blue" id="btn-home">Fertig für heute 🏠</button>
   </div>
@@ -360,6 +369,11 @@ body[data-subj="nl"] #bg{background-image:linear-gradient(135deg,#21468b,#ff7b00
       <div id="set-math">
         <label>Welche Reihen?</label>
         <div class="chips" id="rowchips"></div>
+        <label>⏱️ Test-Modus: Anzahl Aufgaben</label>
+        <div class="chips" id="testlenchips"></div>
+        <label>⏱️ Test-Modus: Zeit</label>
+        <div class="chips" id="testminchips"></div>
+        <p class="small" style="margin-top:8px">Im Test kommen alle Aufgaben von 1·1 bis 10·10 (Mal und Geteilt gemischt) in zufälliger Reihenfolge – ohne Tipps, ohne Lösungskarte, ohne Wiederholung.</p>
       </div>
       <div id="set-voc">
         <label>Artikel mitprüfen (der/die/das, de/het)?</label>
@@ -396,7 +410,7 @@ const VOC = window.VOKABELN || { en: [], nl: [] };
 const subjDefaults = id => Object.assign({
   xp: 0, totalRight: 0, streak: 0, lastDay: "", roundsDay: "", roundsToday: 0, tasksToday: 0,
   badges: [], rounds: 0, stats: {}, goal: 2, len: 10
-}, id === "math" ? { rows: [2,3,4,5,6,7,8,9], mode: "mul" } : { lessons: [], dir: "de2x", articles: true, len: 0 });
+}, id === "math" ? { rows: [2,3,4,5,6,7,8,9], mode: "mul", testLen: 100, testMin: 6 } : { lessons: [], dir: "de2x", articles: true, len: 0 });
 const defaults = () => ({
   name: "", topic: rndTopic(), sound: true, avatar: 0, outbox: [], cur: "math",
   subj: { math: subjDefaults("math"), en: subjDefaults("en"), nl: subjDefaults("nl") }
@@ -677,7 +691,8 @@ function renderHome(){
   $("btn-start").textContent = p.roundsToday >= p.goal ? "BONUS-RUNDE! 🌟" : "LOS GEHT'S! 🚀";
   $("mathcard").style.display = isVoc() ? "none" : "";
   $("voccard").style.display = isVoc() ? "" : "none";
-  if (!isVoc()) document.querySelectorAll("#modechips .chip").forEach(c => c.classList.toggle("on", c.dataset.mode === p.mode));
+  if (!isVoc()) { document.querySelectorAll("#modechips .chip").forEach(c => c.classList.toggle("on", c.dataset.mode === p.mode));
+    $("test-sub").textContent = `${p.testLen || 100} Aufgaben · ${p.testMin || 6} Minuten · Mal & Geteilt`; }
   else {
     const ls = lessonsOf(S.cur), sel = p.lessons || [];
     $("lessonchips").innerHTML = ls.length
@@ -738,10 +753,21 @@ let G = null;
 const PRAISE = ["Krass! 🤩","Boom! 💥","Mega! 🚀","Hammer! 🔨","Läuft! 😎","Stark! 💪","Genial! 🧠","Yesss! 🙌","Wow! ✨","Top! 🏆","Perfekt! 💯","Nice! 👌","Legendär! 👑","Raketenstark! 🚀"];
 const EMOJIS = ["🎉","⭐","🔥","💎","🚀","🦄","🍕","🌈","⚡","🏆","😎","💯"];
 
-function startRound(){
-  const tasks = buildRound();
+let timerId = null, lastStart = null;
+function stopTimer(){ if (timerId) { clearInterval(timerId); timerId = null; } }
+function buildTest(){
+  const p = S.subj.math, all = [];
+  for (let a = 1; a <= 10; a++) for (let b = 1; b <= 10; b++) all.push(Math.random() < .5 ? {kind:"math", op:"mul", a, b} : {kind:"math", op:"div", a, b});
+  for (let i = all.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [all[i], all[j]] = [all[j], all[i]]; }
+  return all.slice(0, p.testLen || 100);
+}
+function startTest(){ S.cur = "math"; save(); startRound(buildTest(), true); }
+function startRound(custom, test){
+  stopTimer();
+  lastStart = { custom: test ? null : custom, test: !!test };
+  const tasks = custom || buildRound();
   if (!tasks.length) { toast("Hier sind noch keine Vokabeln drin 📸"); return; }
-  G = { subj: S.cur, queue: tasks.slice(), total: tasks.length, done: 0, firstTry: 0, combo: 0, maxCombo: 0, xp: 0, hints: 0,
+  G = { test: !!test, subj: S.cur, queue: tasks.slice(), total: tasks.length, done: 0, firstTry: 0, combo: 0, maxCombo: 0, xp: 0, hints: 0,
         errors: [], wrongKeys: new Set(), bossWins: 0, times: [], start: Date.now(), cur: null, input: "", locked: false, tStart: 0, hint: 0 };
   G.bossKeys = new Set(Object.entries(P().stats).filter(([k,v]) => isBoss(v)).map(([k]) => k));
   const voc = isVoc();
@@ -749,7 +775,18 @@ function startRound(){
   $("answer").style.display = voc ? "none" : "";
   $("vocbox").style.display = voc ? "flex" : "none";
   $("task").classList.toggle("voc", voc);
-  show("s-game"); updateCombo(); nextTask();
+  show("s-game"); updateCombo();
+  if (G.test) {
+    const p = S.subj.math; G.limit = (p.testMin || 6) * 60; G.deadline = Date.now() + G.limit * 1000;
+    const tick = () => {
+      if (!G || !G.test) return stopTimer();
+      const left = Math.max(0, Math.ceil((G.deadline - Date.now()) / 1000));
+      const c = $("combo"); c.className = "combo timer" + (left <= 30 ? " low" : ""); c.textContent = "⏱ " + fmtTime(left);
+      if (left <= 0) { stopTimer(); G.timeout = true; G.locked = true; beep([440,330,220], .15); toast("⏰ Zeit ist um!"); setTimeout(finishRound, 900); }
+    };
+    tick(); timerId = setInterval(tick, 250);
+  } else $("combo").className = "combo";
+  nextTask();
 }
 function nextTask(){
   if (!G) return;
@@ -807,6 +844,18 @@ function check(){
   const st = p.stats[k] || (p.stats[k] = {r:0, w:0});
   if (voc) st.l = labelOf(t);
   const isRetry = G.wrongKeys.has(k), secs = (Date.now() - G.tStart) / 1000;
+  if (G.test) {
+    G.done++;
+    if (ok) {
+      $("answer").classList.add("ok"); G.firstTry++; st.r++; p.totalRight++; G.times.push({l: promptOf(t), s: secs});
+      G.combo++; G.maxCombo = Math.max(G.maxCombo, G.combo); G.xp += 6 + (secs < 3 ? 2 : 0);
+      sOk(Math.min(G.combo, 6)); const r = $("answer").getBoundingClientRect(); burst(r.left + r.width/2, r.top + r.height/2, 18, 8);
+    } else {
+      $("answer").classList.add("bad"); st.w++; G.combo = 0; sBad(); if (navigator.vibrate) navigator.vibrate(80);
+      G.errors.push({l: promptOf(t), got: raw, right, t});
+    }
+    save(); setTimeout(nextTask, ok ? 220 : 450); return;
+  }
   if (voc) { $("vocin").blur(); $("vocin").disabled = true; }
   if (ok) {
     (voc ? $("vocin") : $("answer")).classList.add("ok");
@@ -822,7 +871,7 @@ function check(){
     sBad(); if (navigator.vibrate) navigator.vibrate(150);
     flash("rgba(255,61,113,.35)");
     G.combo = 0; updateCombo();
-    if (!isRetry) { st.w++; G.done++; G.errors.push({l: promptOf(t), got: raw, right: right.split(/\s*\/\s*/)[0]}); G.wrongKeys.add(k); }
+    if (!isRetry) { st.w++; G.done++; G.errors.push({l: promptOf(t), got: raw, right: right.split(/\s*\/\s*/)[0], t}); G.wrongKeys.add(k); }
     G.queue.splice(Math.min(G.queue.length, 2 + Math.floor(Math.random()*2)), 0, t);
     save();
     setTimeout(() => showWay(t, raw, false), 600);
@@ -855,6 +904,7 @@ function showWay(t, given, ok){
   $("way").classList.add("show");
 }
 function updateCombo(){
+  if (G && G.test) return;
   const c = $("combo");
   c.textContent = G.combo >= 2 ? `🔥${G.combo}` : "";
   c.classList.remove("hot"); void c.offsetWidth; if (G.combo >= 2) c.classList.add("hot");
@@ -877,7 +927,7 @@ $("btn-hint").onclick = () => {
 };
 $("qspeak").onclick = () => { if (G && G.cur && G.cur.kind === "voc") speak(promptOf(G.cur), SUBJ[G.subj].lang); };
 function twice(id, msg, fn){ let t = 0; $(id).addEventListener("click", () => { const n = Date.now(); if (n - t < 2500) { t = 0; fn(); } else { t = n; toast(msg); } }); }
-twice("btn-quit", "Nochmal tippen = Runde abbrechen", () => { G = null; renderHome(); show("s-home"); });
+twice("btn-quit", "Nochmal tippen = Runde abbrechen", () => { stopTimer(); G = null; renderHome(); show("s-home"); });
 const KP = ["1","2","3","4","5","6","7","8","9","del","0","ok"];
 $("keypad").innerHTML = KP.map((k,i) => `<button class="key ${k==="ok"?"ok":k==="del"?"del":"k"+(i%5)}" data-k="${k}">${k==="del"?"⌫":k==="ok"?"✓":k}</button>`).join("");
 $("keypad").addEventListener("click", e => { const b = e.target.closest(".key"); if (b) press(b.dataset.k); });
@@ -895,8 +945,10 @@ const starLine = n => "⭐".repeat(n) + "☆".repeat(5 - n);
 const STAR_TXT = ["", "Jede Runde macht dich besser – dranbleiben!", "Guter Anfang – beim nächsten Mal klappt noch mehr!",
   "Richtig solide – nur noch ein paar Wörter üben!", "Fast perfekt – nur ganz knapp an 5 Sternen vorbei!", "Alles beim ersten Versuch richtig – Champion! 👑"];
 function finishRound(){
+  if (!G || G.finished) return; G.finished = true; stopTimer();
   const p = S.subj[G.subj], voc = G.subj !== "math";
-  const secs = (Date.now() - G.start)/1000, avg = secs / G.total;
+  const secs = Math.min((Date.now() - G.start)/1000, G.test ? G.limit : Infinity), avg = secs / Math.max(1, G.test ? G.done : G.total);
+  if (G.test) { G.missed = G.total - G.done; G.missedList = (G.cur && !G.cur._done && G.timeout ? [G.cur] : []).concat(G.queue).slice(0, G.missed); }
   const pct = Math.round(G.firstTry / G.total * 100);
   const stars = starsFor(pct);
   if (pct === 100) G.xp += 30;
@@ -924,9 +976,11 @@ function finishRound(){
   if (newLevel >= 10) give("lvl10");
   save();
 
-  $("res-title").textContent = ["", "Geschafft! 💪", "Gut gemacht! 👍", "Richtig stark! 🙌", "MEGA! 🎉", "PERFEKT! 👑"][stars];
+  $("res-title").textContent = (G.test ? "⏱️ Test: " : "") + ["", "Geschafft! 💪", "Gut gemacht! 👍", "Richtig stark! 🙌", "MEGA! 🎉", "PERFEKT! 👑"][stars];
   $("res-score").textContent = `${G.firstTry} / ${G.total}`;
-  $("res-sub").textContent = STAR_TXT[stars];
+  $("res-sub").textContent = G.test
+    ? (G.timeout ? `⏰ Zeit abgelaufen – ${G.done} von ${G.total} geschafft.` : `Alle ${G.total} Aufgaben in ${fmtTime(secs)} geschafft!`) + (G.errors.length ? ` ${G.errors.length} Fehler.` : " Kein einziger Fehler!")
+    : STAR_TXT[stars];
   $("res-time").textContent = fmtTime(secs);
   $("res-avg").textContent = de(avg) + " s";
   $("res-xp").textContent = "+" + G.xp;
@@ -938,8 +992,11 @@ function finishRound(){
   $("res-extra").innerHTML = extra;
   [...$("res-extra").children].forEach((c,i) => c.style.animationDelay = (1.4 + i*.3) + "s");
   $("res-errcard").style.display = G.errors.length ? "" : "none";
-  $("res-errtitle").textContent = voc ? "👾 Neue Boss-Vokabeln:" : "👾 Neue Boss-Aufgaben:";
+  $("res-errtitle").textContent = G.test ? "❌ Diese Aufgaben waren falsch:" : voc ? "👾 Neue Boss-Vokabeln:" : "👾 Neue Boss-Aufgaben:";
+  $("btn-fixerrors").style.display = G.errors.length ? "" : "none";
+  $("btn-again").textContent = G.test ? "TEST NOCHMAL! ⏱️" : "NOCH EINE RUNDE! 🔁";
   $("res-errors").innerHTML = G.errors.map(e => `<span>${esc(e.l)} = ${esc(e.right)}</span>`).join("");
+  G.fixTasks = G.errors.map(e => e.t).filter(Boolean);
   const st = $("stars").children; [...st].forEach(s => s.classList.remove("on"));
   show("s-result");
   for (let i=0;i<stars;i++) setTimeout(() => { st[i].classList.add("on"); beep([600+i*150],.12);
@@ -969,6 +1026,24 @@ function queueReport(r){
     const dirTxt = {de2x: `Deutsch → ${sb.name}`, x2de: `${sb.name} → Deutsch`, mix: "beide Richtungen"}[p.dir];
     what = `📚 ${ls} · ${dirTxt}`;
   } else what = `📚 ${{mul:"Mal", div:"Geteilt", mix:"Mal & Geteilt"}[p.mode]} · Reihen ${p.rows.join(", ")}`;
+  if (G.test) {
+    const tl = [
+      G.timeout ? `⏰ Test beendet – Zeit abgelaufen` : `✅ Test vollständig bearbeitet`,
+      `${starLine(r.stars)}  ${r.stars} von 5 Sternen`,
+      `📊 ${G.firstTry} von ${G.total} richtig (${r.pct} %)`,
+      `📝 Bearbeitet: ${G.done} von ${G.total}` + (G.missed ? ` · ${G.missed} nicht geschafft` : ""),
+      `⏱ ${fmtTime(r.secs)} von ${fmtTime(G.limit)} min · Ø ${de(r.avg)} s pro Aufgabe`,
+      G.errors.length ? `❌ Fehler (${G.errors.length}): ${G.errors.map(e => `${e.l} (${e.got} statt ${e.right})`).join(", ")}` : `💎 Keine Fehler!`
+    ];
+    if (slow.length) tl.push(`🐢 Langsam: ${slow.map(t => `${t.l} (${Math.round(t.s)} s)`).join(", ")}`);
+    tl.push(`🕒 ${now.toLocaleDateString("de-DE")} ${now.toLocaleTimeString("de-DE",{hour:"2-digit",minute:"2-digit"})}`);
+    S.outbox.push({ title: `⏱️ 1×1-TEST: ${name} ${starLine(r.stars)} (${G.firstTry}/${G.total})`, msg: tl.join("\n"),
+                    tags: r.stars >= 4 ? "tada" : r.stars >= 2 ? "+1" : "muscle" });
+    S.outbox = S.outbox.slice(-20); save();
+    $("res-notify").textContent = "📲 Ergebnis wird gesendet …";
+    flushOutbox().then(ok => $("res-notify").textContent = ok ? "📲 Ergebnis wurde gesendet" : "📲 Gerade offline – wird später automatisch nachgeschickt");
+    return;
+  }
   const lines = [
     `✅ Lerneinheit abgeschlossen`,
     `${starLine(r.stars)}  ${r.stars} von 5 Sternen`,
@@ -1027,6 +1102,8 @@ function renderSettings(){
   $("set-subj-title").textContent = `${SUBJ[S.cur].icon} Einstellungen ${SUBJ[S.cur].name}`;
   $("set-math").style.display = voc ? "none" : "";
   $("set-voc").style.display = voc ? "" : "none";
+  if (!voc) { $("testlenchips").innerHTML = [25,50,100].map(n => `<button class="chip ${(p.testLen||100)===n?"on":""}" data-n="${n}">${n}</button>`).join("");
+    $("testminchips").innerHTML = [3,4,6,8,10].map(n => `<button class="chip ${(p.testMin||6)===n?"on":""}" data-m="${n}">${n} Min</button>`).join(""); }
   if (!voc) $("rowchips").innerHTML = [1,2,3,4,5,6,7,8,9,10].map(r => `<button class="chip ${p.rows.includes(r)?"on":""}" data-r="${r}">${r}er</button>`).join("");
   else $("artchips").innerHTML = `<button class="chip ${p.articles?"on":""}" data-a="1">Ja</button><button class="chip ${p.articles?"":"on"}" data-a="0">Nein</button>`;
   $("lenchips").innerHTML = (voc ? [0,5,10,15,20] : [5,10,15,20]).map(n => `<button class="chip ${p.len===n?"on":""}" data-n="${n}">${n || "Alle"}</button>`).join("");
@@ -1042,6 +1119,8 @@ function renderSettings(){
 $("rowchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; const p = P(), r = +c.dataset.r;
   p.rows = p.rows.includes(r) ? p.rows.filter(x => x !== r) : p.rows.concat(r).sort((a,b) => a-b);
   if (!p.rows.length) p.rows = [r]; save(); renderSettings(); };
+$("testlenchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; S.subj.math.testLen = +c.dataset.n; save(); renderSettings(); };
+$("testminchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; S.subj.math.testMin = +c.dataset.m; save(); renderSettings(); };
 $("artchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().articles = c.dataset.a === "1"; save(); renderSettings(); };
 $("lenchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().len = +c.dataset.n; save(); renderSettings(); };
 $("goalchips").onclick = e => { const c = e.target.closest(".chip"); if (!c) return; P().goal = +c.dataset.g; save(); renderSettings(); };
@@ -1058,7 +1137,7 @@ twice("btn-reset", "Nochmal tippen = dieses Fach wirklich zurücksetzen", () => 
 $("btn-back").onclick = () => { renderHome(); show("s-home"); };
 
 /* ================= Updates ================= */
-const APP_VERSION = "2026-11-21.4";
+const APP_VERSION = "2026-11-22.1";
 const VOC_STAND = "21.11.2026";
 let remoteVer = null;
 async function checkUpdate(){
@@ -1093,7 +1172,9 @@ addEventListener("online", checkUpdate);
 
 /* ================= Start ================= */
 $("btn-start").onclick = () => { beep([523,784,1047],.07); startRound(); };
-$("btn-again").onclick = () => { S.cur = G ? G.subj : S.cur; startRound(); };
+$("btn-again").onclick = () => { if (G && G.test) return startTest(); S.cur = G ? G.subj : S.cur; startRound(); };
+$("btn-fixerrors").onclick = () => { if (!G || !G.fixTasks || !G.fixTasks.length) return; S.cur = G.subj; const t = G.fixTasks.slice(); startRound(t); };
+$("btn-test-mode").onclick = () => { beep([523,659,784],.07); startTest(); };
 $("btn-home").onclick = () => { renderHome(); show("s-home"); };
 renderHome();
 flushOutbox();
